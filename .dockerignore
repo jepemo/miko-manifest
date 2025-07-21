@@ -1,0 +1,58 @@
+# Go specific ignores
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+go.work
+
+# Binary
+miko-manifest
+
+# Build artifacts
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+output/
+output-*/
+test-*/
+config/
+templates/
+
+# Git
+.git/
+.gitignore
+
+# Python version files (legacy)
+*.py
+*.pyc
+__pycache__/
+*.egg-info/
+.venv/
+uv.lock
+pyproject.toml
+main.py
+
+# Documentation
+*.md
+!README.md
+
+# Config files (will be mounted in pipeline)
+yamllint.config

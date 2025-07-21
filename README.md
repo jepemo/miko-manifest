@@ -1,0 +1,388 @@
+# Miko-Manifest
+
+Miko-Manifest is a CLI application written in Go that provides powerful configuration management for Kubernetes manifests with templating capabilities.
+
+## Features
+
+- **Template Processing**: Supports Go templates with three processing patterns:
+  - Simple file processing
+  - Same-file repeat (multiple sections in one file)
+  - Multiple-files repeat (separate files per key)
+- **Environment Configuration**: YAML-based environment-specific configurations
+- **Variable Override**: Command-line variable overrides
+- **YAML Validation**: Integrated yamllint and Kubernetes manifest validation
+- **Library Architecture**: Core functionality available as a Go library
+
+## Installation
+
+### From Source
+
+```bash
+go install github.com/jepemo/miko-manifest@latest
+```
+
+### Using Docker
+
+```bash
+docker pull jepemo/miko-manifest:latest
+```
+
+## Usage
+
+### Initialize a Project
+
+```bash
+miko-manifest init
+```
+
+This command creates:
+
+- `templates/`: Directory for Go template files
+- `config/`: Directory for environment-specific YAML configurations
+- Example files demonstrating all three processing patterns
+
+### Build Project
+
+```bash
+miko-manifest build --env dev --output-dir output
+```
+
+**Available Parameters:**
+
+- `--env`, `-e`: Environment configuration to use (required)
+- `--output-dir`, `-o`: Output directory for generated files (required)
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--templates`, `-t`: Templates directory path (default: "templates")
+- `--var`: Override variables (format: `--var NAME=VALUE`)
+
+**Examples:**
+
+```bash
+# Basic build
+miko-manifest build --env dev --output-dir output
+
+# With custom directories
+miko-manifest build --env prod --output-dir dist --config prod-config --templates prod-templates
+
+# With variable overrides
+miko-manifest build --env dev --output-dir output --var app_name=my-app --var replicas=5
+```
+
+### Validate Configuration
+
+```bash
+miko-manifest check --config config
+```
+
+Validates YAML files in the configuration directory using yamllint.
+
+### Lint Generated Files
+
+```bash
+miko-manifest lint --dir output
+```
+
+Performs two-step validation:
+
+1. **YAML Linting**: Using yamllint
+2. **Kubernetes Validation**: Schema validation for Kubernetes manifests
+
+## Template Processing Types
+
+### 1. Simple File Processing
+
+```yaml
+include:
+  - file: deployment.yaml
+```
+
+Template is processed once with global variables.
+
+### 2. Same-File Repeat
+
+```yaml
+include:
+  - file: configmap.yaml
+    repeat: same-file
+    list:
+      - key: database-config
+        values:
+          - name: config_name
+            value: database-config
+          - name: database_url
+            value: postgresql://localhost:5432/mydb
+      - key: cache-config
+        values:
+          - name: config_name
+            value: cache-config
+          - name: database_url
+            value: redis://localhost:6379
+```
+
+Generates multiple sections in a single file separated by `---`.
+
+### 3. Multiple-Files Repeat
+
+```yaml
+include:
+  - file: service.yaml
+    repeat: multiple-files
+    list:
+      - key: frontend
+        values:
+          - name: service_name
+            value: frontend-service
+          - name: service_port
+            value: "80"
+      - key: backend
+        values:
+          - name: service_name
+            value: backend-service
+          - name: service_port
+            value: "3000"
+```
+
+Generates separate files: `service-frontend.yaml`, `service-backend.yaml`.
+
+## Configuration Structure
+
+### Environment Configuration (`config/dev.yaml`)
+
+```yaml
+variables:
+  - name: app_name
+    value: my-app
+  - name: namespace
+    value: default
+  - name: replicas
+    value: "3"
+
+include:
+  - file: deployment.yaml
+  - file: configmap.yaml
+    repeat: same-file
+    list:
+      - key: database-config
+        values:
+          - name: config_name
+            value: database-config
+  - file: service.yaml
+    repeat: multiple-files
+    list:
+      - key: frontend
+        values:
+          - name: service_name
+            value: frontend-service
+```
+
+### Template Example (`templates/deployment.yaml`)
+
+```yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{.app_name}}"
+  namespace: "{{.namespace}}"
+spec:
+  replicas: { { .replicas } }
+  selector:
+    matchLabels:
+      app: "{{.app_name}}"
+  template:
+    metadata:
+      labels:
+        app: "{{.app_name}}"
+    spec:
+      containers:
+        - name: "{{.app_name}}"
+          image: "{{.image}}:{{.tag}}"
+          ports:
+            - containerPort: { { .port } }
+```
+
+## Docker Usage
+
+### Using Pre-built Image
+
+```bash
+# Check configuration
+docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest check --config /workspace/config
+
+# Build manifests
+docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest build \
+  --env dev \
+  --output-dir /workspace/output \
+  --config /workspace/config \
+  --templates /workspace/templates
+
+# Lint generated files
+docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest lint --dir /workspace/output
+```
+
+### CI/CD Pipeline Examples
+
+**GitHub Actions:**
+
+```yaml
+name: Miko-Manifest Build
+on: [push, pull_request]
+
+env:
+  MIKO_IMAGE: jepemo/miko-manifest:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate configuration
+        run: docker run --rm -v "${{ github.workspace }}:/workspace" $MIKO_IMAGE check --config /workspace/config
+
+      - name: Generate manifests
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/workspace" \
+            $MIKO_IMAGE build \
+            --env dev \
+            --output-dir /workspace/output \
+            --config /workspace/config \
+            --templates /workspace/templates
+
+      - name: Validate generated manifests
+        run: docker run --rm -v "${{ github.workspace }}:/workspace" $MIKO_IMAGE lint --dir /workspace/output
+```
+
+**GitLab CI:**
+
+```yaml
+stages:
+  - validate
+  - build
+  - verify
+
+validate-config:
+  stage: validate
+  image: jepemo/miko-manifest:latest
+  script:
+    - miko-manifest check --config config/
+
+generate-manifests:
+  stage: build
+  image: jepemo/miko-manifest:latest
+  script:
+    - miko-manifest build --env ${ENVIRONMENT:-dev} --output-dir output/ --config config/ --templates templates/
+  artifacts:
+    paths:
+      - output/
+    expire_in: 1 week
+
+verify-manifests:
+  stage: verify
+  image: jepemo/miko-manifest:latest
+  script:
+    - miko-manifest lint --dir output/
+```
+
+## Library Usage
+
+Miko-Manifest is designed with a library-first approach. You can use it programmatically:
+
+```go
+package main
+
+import (
+    "github.com/jepemo/miko-manifest/pkg/mikomanifest"
+)
+
+func main() {
+    // Initialize a project
+    initOptions := mikomanifest.InitOptions{
+        ProjectDir: "/path/to/project",
+    }
+    mikomanifest.InitProject(initOptions)
+
+    // Build project
+    buildOptions := mikomanifest.BuildOptions{
+        Environment:   "dev",
+        OutputDir:     "output",
+        ConfigDir:     "config",
+        TemplatesDir:  "templates",
+        Variables:     map[string]string{"app_name": "my-app"},
+    }
+
+    mikoManifest := mikomanifest.New(buildOptions)
+    mikoManifest.Build()
+
+    // Lint directory
+    lintOptions := mikomanifest.LintOptions{
+        Directory: "output",
+    }
+    mikomanifest.LintDirectory(lintOptions)
+}
+```
+
+## Development
+
+### Build from Source
+
+```bash
+# Clone repository
+git clone https://github.com/jepemo/miko-manifest.git
+cd miko-manifest
+
+# Build
+go build -o miko-manifest .
+
+# Run
+./miko-manifest --help
+```
+
+### Run Tests
+
+```bash
+go test ./...
+```
+
+### Build Docker Image
+
+```bash
+docker build -f Dockerfile.go -t miko-manifest:latest .
+```
+
+## Migration from Konfig
+
+If you're migrating from the Python version (Konfig), the command structure is very similar:
+
+**Python (Konfig):**
+
+```bash
+uv run konfig build --env dev --output-dir output
+```
+
+**Go (Miko-Manifest):**
+
+```bash
+miko-manifest build --env dev --output-dir output
+```
+
+## Dependencies
+
+- **CLI Framework**: [cobra](https://github.com/spf13/cobra)
+- **YAML Processing**: [gopkg.in/yaml.v3](https://gopkg.in/yaml.v3)
+- **Kubernetes Validation**: [k8s.io/client-go](https://github.com/kubernetes/client-go)
+- **External Tool**: yamllint (for YAML linting)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+MIT License

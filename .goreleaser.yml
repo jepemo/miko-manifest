@@ -1,0 +1,127 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: miko-manifest
+    main: ./main.go
+    binary: miko-manifest
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: miko-manifest
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - templates/**/*
+      - config/**/*
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: jepemo
+    name: miko-manifest
+  draft: false
+  prerelease: auto
+  name_template: "Release {{.Tag}}"
+  header: |
+    ## Miko-Manifest {{.Tag}}
+
+    Configuration management for Kubernetes manifests with templating capabilities.
+
+    ### Installation
+
+    ```bash
+    # Using Go
+    go install github.com/jepemo/miko-manifest@{{.Tag}}
+
+    # Using Docker
+    docker pull ghcr.io/jepemo/miko-manifest:{{.Tag}}
+    ```
+  footer: |
+    ## Docker Images
+
+    - `ghcr.io/jepemo/miko-manifest:{{.Tag}}`
+    - `ghcr.io/jepemo/miko-manifest:latest`
+
+    **Full Changelog**: https://github.com/jepemo/miko-manifest/compare/{{.PreviousTag}}...{{.Tag}}
+
+dockers:
+  - image_templates:
+      - "ghcr.io/jepemo/miko-manifest:{{ .Tag }}"
+      - "ghcr.io/jepemo/miko-manifest:latest"
+    dockerfile: Dockerfile
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+      - "--label=org.opencontainers.image.description=Configuration management for Kubernetes manifests with templating capabilities"
+    extra_files:
+      - templates/
+      - config/
+
+nfpms:
+  - id: miko-manifest
+    package_name: miko-manifest
+    vendor: jepemo
+    homepage: https://github.com/jepemo/miko-manifest
+    maintainer: jepemo <jepemo@users.noreply.github.com>
+    description: Configuration management for Kubernetes manifests with templating capabilities
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/local/bin
+    contents:
+      - src: ./templates/
+        dst: /usr/local/share/miko-manifest/templates/
+      - src: ./config/
+        dst: /usr/local/share/miko-manifest/config/
