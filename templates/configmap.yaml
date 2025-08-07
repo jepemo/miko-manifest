@@ -1,9 +1,0 @@
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: "{{.config_name}}"
-  namespace: "{{.namespace}}"
-data:
-  database_url: "{{.database_url}}"
-  redis_url: "{{.redis_url}}"

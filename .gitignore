@@ -45,4 +45,5 @@ Thumbs.db
 /build/
 
 config/
+templates/
 coverage.html
