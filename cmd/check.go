@@ -13,7 +13,7 @@ var checkConfigDir string
 var checkCmd = &cobra.Command{
 	Use:   "check",
 	Short: "Check YAML files in the specified config directory",
-	Long:  `Check YAML files in the specified config directory using yamllint only.`,
+	Long:  `Check YAML files in the specified config directory using native Go YAML parser.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		options := mikomanifest.CheckOptions{
 			ConfigDir: checkConfigDir,

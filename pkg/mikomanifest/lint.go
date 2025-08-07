@@ -3,7 +3,6 @@ package mikomanifest
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -22,7 +21,7 @@ type CheckOptions struct {
 	ConfigDir string
 }
 
-// LintDirectory runs yamllint and kubernetes validation on a directory
+// LintDirectory runs native Go YAML linting and kubernetes validation on a directory
 func LintDirectory(options LintOptions) error {
 	fmt.Printf("Linting YAML files in directory: %s\n", options.Directory)
 	
@@ -36,18 +35,18 @@ func LintDirectory(options LintOptions) error {
 		return fmt.Errorf("%s is not a directory", options.Directory)
 	}
 	
-	// Run yamllint
-	yamllintSuccess := runYamllint(options.Directory)
+	// Run YAML linting
+	yamlLintSuccess := lintYAMLFiles(options.Directory)
 	
 	// Run Kubernetes validation
 	k8sSuccess := validateKubernetesManifests(options.Directory)
 	
 	// Final result
-	if yamllintSuccess && k8sSuccess {
+	if yamlLintSuccess && k8sSuccess {
 		fmt.Println("🎉 All validations passed!")
 	} else {
 		errorParts := []string{}
-		if !yamllintSuccess {
+		if !yamlLintSuccess {
 			errorParts = append(errorParts, "YAML linting")
 		}
 		if !k8sSuccess {
@@ -61,7 +60,7 @@ func LintDirectory(options LintOptions) error {
 	return nil
 }
 
-// CheckConfigDirectory runs yamllint only on config directory
+// CheckConfigDirectory runs native Go YAML linting only on config directory
 func CheckConfigDirectory(options CheckOptions) error {
 	fmt.Printf("✓ Using config directory: %s\n", options.ConfigDir)
 	fmt.Printf("Linting YAML files in directory: %s\n", options.ConfigDir)
@@ -76,7 +75,7 @@ func CheckConfigDirectory(options CheckOptions) error {
 		return fmt.Errorf("%s is not a directory", options.ConfigDir)
 	}
 	
-	success := runYamllint(options.ConfigDir)
+	success := lintYAMLFiles(options.ConfigDir)
 	
 	if success {
 		fmt.Println("SUCCESS: All YAML files passed linting!")
@@ -88,40 +87,156 @@ func CheckConfigDirectory(options CheckOptions) error {
 	return nil
 }
 
-// runYamllint runs yamllint on a directory
-func runYamllint(directory string) bool {
-	// Check if yamllint is available
-	if _, err := exec.LookPath("yamllint"); err != nil {
-		fmt.Println("ERROR: yamllint is not installed.")
-		fmt.Println("   Install it with: pip install yamllint")
+// lintYAMLFiles performs YAML linting using native Go libraries
+func lintYAMLFiles(directory string) bool {
+	fmt.Printf("Linting YAML files in %s using native Go YAML parser...\n", directory)
+	
+	// Check if directory exists first
+	if stat, err := os.Stat(directory); err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("ERROR: Directory %s not found\n", directory)
+			return false
+		}
+		fmt.Printf("ERROR: Error accessing directory %s: %v\n", directory, err)
+		return false
+	} else if !stat.IsDir() {
+		fmt.Printf("ERROR: %s is not a directory\n", directory)
 		return false
 	}
 	
-	// Build yamllint command
-	args := []string{}
-	
-	// Check if yamllint.config exists
-	if _, err := os.Stat("yamllint.config"); err == nil {
-		args = append(args, "-c", "yamllint.config")
-		fmt.Println("✓ Using config file: yamllint.config")
-	} else {
-		fmt.Println("ℹ No yamllint.config found, using default configuration")
+	// Find YAML files
+	yamlFiles, err := filepath.Glob(filepath.Join(directory, "*.yaml"))
+	if err != nil {
+		fmt.Printf("ERROR: Error finding YAML files: %v\n", err)
+		return false
 	}
 	
-	// Add the directory to lint
-	args = append(args, directory)
-	
-	fmt.Printf("Running: yamllint %s\n", strings.Join(args, " "))
-	
-	// Run yamllint
-	cmd := exec.Command("yamllint", args...)
-	output, err := cmd.CombinedOutput()
-	
-	if len(output) > 0 {
-		fmt.Print(string(output))
+	ymlFiles, err := filepath.Glob(filepath.Join(directory, "*.yml"))
+	if err != nil {
+		fmt.Printf("ERROR: Error finding YML files: %v\n", err)
+		return false
 	}
 	
-	return err == nil
+	allFiles := append(yamlFiles, ymlFiles...)
+	
+	if len(allFiles) == 0 {
+		fmt.Printf("ℹ No YAML files found in %s\n", directory)
+		return true
+	}
+	
+	yamlErrors := 0
+	yamlValidated := 0
+	
+	for _, yamlFile := range allFiles {
+		if lintSingleYAMLFile(yamlFile) {
+			yamlValidated++
+		} else {
+			yamlErrors++
+		}
+	}
+	
+	fmt.Printf("YAML Linting Results: %d file(s) validated successfully, %d error(s)\n", yamlValidated, yamlErrors)
+	
+	return yamlErrors == 0
+}
+
+// lintSingleYAMLFile lints a single YAML file using Go's yaml.v3 library
+func lintSingleYAMLFile(filePath string) bool {
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		fmt.Printf("ERROR: %s - Error reading file: %v\n", filepath.Base(filePath), err)
+		return false
+	}
+	
+	// Check if file is empty
+	if len(strings.TrimSpace(string(content))) == 0 {
+		fmt.Printf("WARNING: %s - Empty file\n", filepath.Base(filePath))
+		return true
+	}
+	
+	// Split by document separator to handle multi-document YAML files
+	documents := strings.Split(string(content), "\n---\n")
+	
+	hasValidDocuments := false
+	documentErrors := 0
+	
+	for i, doc := range documents {
+		doc = strings.TrimSpace(doc)
+		if doc == "" {
+			continue
+		}
+		
+		// Try to parse the YAML document
+		var parsed interface{}
+		if err := yaml.Unmarshal([]byte(doc), &parsed); err != nil {
+			docInfo := ""
+			if len(documents) > 1 {
+				docInfo = fmt.Sprintf(" [doc %d]", i+1)
+			}
+			fmt.Printf("ERROR: %s%s - YAML syntax error: %v\n", filepath.Base(filePath), docInfo, err)
+			documentErrors++
+		} else {
+			hasValidDocuments = true
+			// Additional validation: check for basic YAML best practices
+			if validateYAMLStructure(parsed, filepath.Base(filePath), i+1, len(documents) > 1) {
+				docInfo := ""
+				if len(documents) > 1 {
+					docInfo = fmt.Sprintf(" [doc %d]", i+1)
+				}
+				fmt.Printf("VALID: %s%s - YAML syntax is correct\n", filepath.Base(filePath), docInfo)
+			} else {
+				documentErrors++
+			}
+		}
+	}
+	
+	if !hasValidDocuments && documentErrors == 0 {
+		fmt.Printf("WARNING: %s - No valid YAML documents found\n", filepath.Base(filePath))
+		return true
+	}
+	
+	return documentErrors == 0
+}
+
+// validateYAMLStructure performs additional validation on parsed YAML structure
+func validateYAMLStructure(parsed interface{}, fileName string, docIndex int, isMultiDoc bool) bool {
+	docInfo := ""
+	if isMultiDoc {
+		docInfo = fmt.Sprintf(" [doc %d]", docIndex)
+	}
+	
+	switch v := parsed.(type) {
+	case map[string]interface{}:
+		// Check for empty maps
+		if len(v) == 0 {
+			fmt.Printf("WARNING: %s%s - Empty YAML document\n", fileName, docInfo)
+			return true
+		}
+		
+		// Check for common YAML issues like duplicate keys (already handled by yaml.v3)
+		// Check for null values in critical fields
+		for key, value := range v {
+			if value == nil {
+				fmt.Printf("WARNING: %s%s - Null value for key '%s'\n", fileName, docInfo, key)
+			}
+		}
+		
+	case []interface{}:
+		// Check for empty arrays
+		if len(v) == 0 {
+			fmt.Printf("WARNING: %s%s - Empty YAML array\n", fileName, docInfo)
+			return true
+		}
+		
+	case nil:
+		fmt.Printf("WARNING: %s%s - Null YAML document\n", fileName, docInfo)
+		return true
+		
+	default:
+		// Scalar values are generally fine
+	}
+	
+	return true
 }
 
 // validateKubernetesManifests validates Kubernetes manifests in a directory

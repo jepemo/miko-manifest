@@ -266,14 +266,10 @@ func (h *TestHelper) GetCheckOptions() CheckOptions {
 	}
 }
 
-// SkipIfYamllintNotInstalled skips the test if yamllint is not installed
-func (h *TestHelper) SkipIfYamllintNotInstalled() {
-	// Try to run yamllint to check if it's available
-	tempFile := h.CreateFile("test.yaml", "key: value")
-	success := runYamllint(filepath.Dir(tempFile))
-	if !success {
-		h.t.Skip("yamllint not found or failed, skipping test")
-	}
+// SkipIfYAMLLintingUnavailable skips the test if YAML linting is not available
+func (h *TestHelper) SkipIfYAMLLintingUnavailable() {
+	// Since we're using native Go YAML parsing, this is always available
+	// This function is kept for compatibility but doesn't skip anymore
 }
 
 // Benchmark helper functions for performance testing

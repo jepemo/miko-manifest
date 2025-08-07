@@ -10,7 +10,7 @@ Miko-Manifest is a CLI application written in Go that provides powerful configur
   - Multiple-files repeat (separate files per key)
 - **Environment Configuration**: YAML-based environment-specific configurations
 - **Variable Override**: Command-line variable overrides
-- **YAML Validation**: Integrated yamllint and Kubernetes manifest validation
+- **YAML Validation**: Native Go YAML validation and Kubernetes manifest validation
 - **Library Architecture**: Core functionality available as a Go library
 
 ## Installation
@@ -74,7 +74,7 @@ miko-manifest build --env dev --output-dir output --var app_name=my-app --var re
 miko-manifest check --config config
 ```
 
-Validates YAML files in the configuration directory using yamllint.
+Validates YAML files in the configuration directory using native Go YAML parsing.
 
 ### Lint Generated Files
 
@@ -84,7 +84,7 @@ miko-manifest lint --dir output
 
 Performs two-step validation:
 
-1. **YAML Linting**: Using yamllint
+1. **YAML Linting**: Using native Go YAML parser
 2. **Kubernetes Validation**: Schema validation for Kubernetes manifests
 
 ## Template Processing Types
@@ -373,7 +373,6 @@ miko-manifest build --env dev --output-dir output
 - **CLI Framework**: [cobra](https://github.com/spf13/cobra)
 - **YAML Processing**: [gopkg.in/yaml.v3](https://gopkg.in/yaml.v3)
 - **Kubernetes Validation**: [k8s.io/client-go](https://github.com/kubernetes/client-go)
-- **External Tool**: yamllint (for YAML linting)
 
 ## Contributing
 

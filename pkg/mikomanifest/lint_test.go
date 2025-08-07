@@ -29,14 +29,12 @@ spec:
 		Directory: tempDir,
 	}
 	
-	// Note: This will fail if yamllint is not installed, but we're testing the function structure
+	// Note: This should now work with native Go YAML parser
 	err = LintDirectory(options)
-	// We expect this to fail because yamllint might not be installed
-	// But we're testing that the function returns an error (not panics)
-	if err == nil {
-		t.Log("LintDirectory passed (yamllint is installed)")
+	if err != nil {
+		t.Logf("LintDirectory failed: %v", err)
 	} else {
-		t.Logf("LintDirectory failed as expected: %v", err)
+		t.Log("LintDirectory passed with native Go YAML parser")
 	}
 	
 	// Test with non-existent directory
@@ -72,14 +70,12 @@ include:
 		ConfigDir: tempDir,
 	}
 	
-	// Note: This will fail if yamllint is not installed, but we're testing the function structure
+	// Note: This should now work with native Go YAML parser
 	err = CheckConfigDirectory(options)
-	// We expect this to fail because yamllint might not be installed
-	// But we're testing that the function returns an error (not panics)
-	if err == nil {
-		t.Log("CheckConfigDirectory passed (yamllint is installed)")
+	if err != nil {
+		t.Logf("CheckConfigDirectory failed: %v", err)
 	} else {
-		t.Logf("CheckConfigDirectory failed as expected: %v", err)
+		t.Log("CheckConfigDirectory passed with native Go YAML parser")
 	}
 	
 	// Test with non-existent directory
@@ -93,7 +89,7 @@ include:
 	}
 }
 
-func TestRunYamllint(t *testing.T) {
+func TestLintYAMLFiles(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := t.TempDir()
 	
@@ -109,16 +105,16 @@ metadata:
 		t.Fatalf("Failed to create valid YAML file: %v", err)
 	}
 	
-	// Test runYamllint function
-	// Note: This function returns a bool, not an error
-	result := runYamllint(tempDir)
+	// Test lintYAMLFiles function
+	result := lintYAMLFiles(tempDir)
 	
-	// If yamllint is not installed, it should return false
-	// If yamllint is installed and the YAML is valid, it should return true
-	t.Logf("runYamllint result: %v", result)
+	// Should return true for valid YAML
+	if !result {
+		t.Error("Expected true for valid YAML, got false")
+	}
 	
 	// Test with non-existent directory
-	result = runYamllint("/non/existent/directory")
+	result = lintYAMLFiles("/non/existent/directory")
 	if result {
 		t.Error("Expected false for non-existent directory, got true")
 	}

@@ -13,7 +13,7 @@ var lintDir string
 var lintCmd = &cobra.Command{
 	Use:   "lint",
 	Short: "Lint YAML files in the specified directory",
-	Long:  `Lint YAML files in the specified directory using yamllint and validate Kubernetes manifests.`,
+	Long:  `Lint YAML files in the specified directory using native Go YAML parser and validate Kubernetes manifests.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		options := mikomanifest.LintOptions{
 			Directory: lintDir,
