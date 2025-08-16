@@ -10,11 +10,13 @@ import (
 )
 
 var (
-	buildEnv         string
-	buildOutputDir   string
-	buildConfigDir   string
-	buildTemplatesDir string
-	buildVariables   []string
+	buildEnv           string
+	buildOutputDir     string
+	buildConfigDir     string
+	buildTemplatesDir  string
+	buildVariables     []string
+	buildDebugConfig   bool
+	buildShowConfigTree bool
 )
 
 var buildCmd = &cobra.Command{
@@ -35,11 +37,13 @@ var buildCmd = &cobra.Command{
 		}
 		
 		options := mikomanifest.BuildOptions{
-			Environment:   buildEnv,
-			OutputDir:     buildOutputDir,
-			ConfigDir:     buildConfigDir,
-			TemplatesDir:  buildTemplatesDir,
-			Variables:     cmdVariables,
+			Environment:     buildEnv,
+			OutputDir:       buildOutputDir,
+			ConfigDir:       buildConfigDir,
+			TemplatesDir:    buildTemplatesDir,
+			Variables:       cmdVariables,
+			DebugConfig:     buildDebugConfig,
+			ShowConfigTree:  buildShowConfigTree,
 		}
 		
 		mikoManifest := mikomanifest.New(options)
@@ -56,6 +60,8 @@ func init() {
 	buildCmd.Flags().StringVarP(&buildConfigDir, "config", "c", "config", "Configuration directory path")
 	buildCmd.Flags().StringVarP(&buildTemplatesDir, "templates", "t", "templates", "Templates directory path")
 	buildCmd.Flags().StringSliceVarP(&buildVariables, "var", "", []string{}, "Override variables in format: --var VAR_NAME=VALUE")
+	buildCmd.Flags().BoolVar(&buildDebugConfig, "debug-config", false, "Show the final merged configuration")
+	buildCmd.Flags().BoolVar(&buildShowConfigTree, "show-config-tree", false, "Show the hierarchy of included resources")
 	
 	buildCmd.MarkFlagRequired("env")
 	buildCmd.MarkFlagRequired("output-dir")

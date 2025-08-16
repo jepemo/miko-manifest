@@ -12,6 +12,7 @@ import (
 
 // Config represents the configuration structure
 type Config struct {
+	Resources []string   `yaml:"resources,omitempty"`
 	Variables []Variable `yaml:"variables"`
 	Include   []Include  `yaml:"include"`
 }
@@ -37,11 +38,13 @@ type ListItem struct {
 
 // BuildOptions contains options for building
 type BuildOptions struct {
-	Environment   string
-	OutputDir     string
-	ConfigDir     string
-	TemplatesDir  string
-	Variables     map[string]string
+	Environment     string
+	OutputDir       string
+	ConfigDir       string
+	TemplatesDir    string
+	Variables       map[string]string
+	DebugConfig     bool
+	ShowConfigTree  bool
 }
 
 // MikoManifest is the main library interface
@@ -56,12 +59,37 @@ func New(options BuildOptions) *MikoManifest {
 	}
 }
 
-// LoadConfig loads configuration from ENV.yaml file
+// LoadConfig loads configuration from ENV.yaml file with hierarchical resource support
 func (m *MikoManifest) LoadConfig(env string) (*Config, error) {
 	configPath := filepath.Join(m.options.ConfigDir, fmt.Sprintf("%s.yaml", env))
+	return m.LoadConfigWithResources(configPath, make([]string, 0), 0)
+}
+
+// LoadConfigWithResources loads configuration with resource inclusion and circular dependency detection
+func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []string, depth int) (*Config, error) {
+	// Check for maximum recursion depth
+	const maxDepth = 5
+	if depth > maxDepth {
+		return nil, fmt.Errorf("maximum recursion depth (%d) exceeded when loading %s", maxDepth, configPath)
+	}
+	
+	// Check for circular dependencies
+	for _, loaded := range loadChain {
+		if loaded == configPath {
+			return nil, fmt.Errorf("circular dependency detected: %s is already in load chain %v", configPath, loadChain)
+		}
+	}
+	
+	// Add current config to the load chain
+	currentChain := append(loadChain, configPath)
 	
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("configuration file %s not found", configPath)
+	}
+	
+	if m.options.ShowConfigTree {
+		indent := strings.Repeat("  ", depth)
+		fmt.Printf("%s📄 Loading: %s\n", indent, configPath)
 	}
 	
 	data, err := os.ReadFile(configPath)
@@ -72,6 +100,50 @@ func (m *MikoManifest) LoadConfig(env string) (*Config, error) {
 	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML in %s: %w", configPath, err)
+	}
+	
+	// Process resources if they exist
+	if len(config.Resources) > 0 {
+		if m.options.ShowConfigTree {
+			indent := strings.Repeat("  ", depth)
+			fmt.Printf("%s📁 Processing %d resource(s):\n", indent, len(config.Resources))
+		}
+		
+		baseConfig := &Config{
+			Variables: []Variable{},
+			Include:   []Include{},
+		}
+		
+		// Load and merge all resources
+		for _, resource := range config.Resources {
+			resourcePath := m.resolveResourcePath(configPath, resource)
+			
+			if m.options.ShowConfigTree {
+				indent := strings.Repeat("  ", depth+1)
+				if isDirectory(resourcePath) {
+					fmt.Printf("%s📂 %s (directory)\n", indent, resource)
+				} else {
+					fmt.Printf("%s📄 %s\n", indent, resource)
+				}
+			}
+			
+			if isDirectory(resourcePath) {
+				// Load all YAML files from directory in alphabetical order
+				if err := m.loadConfigFromDirectory(resourcePath, baseConfig, currentChain, depth+1); err != nil {
+					return nil, fmt.Errorf("failed to load from directory %s: %w", resourcePath, err)
+				}
+			} else {
+				// Load single file
+				resourceConfig, err := m.LoadConfigWithResources(resourcePath, currentChain, depth+1)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load resource %s: %w", resourcePath, err)
+				}
+				*baseConfig = *m.mergeConfigs(baseConfig, resourceConfig)
+			}
+		}
+		
+		// Merge current config with the base config (current config has higher priority)
+		config = *m.mergeConfigs(baseConfig, &config)
 	}
 	
 	return &config, nil
@@ -259,6 +331,24 @@ func (m *MikoManifest) Build() error {
 		return err
 	}
 	
+	// Show debug information if requested
+	if m.options.DebugConfig {
+		fmt.Println("\n🔍 Debug: Final merged configuration:")
+		fmt.Println("Variables:")
+		for _, v := range config.Variables {
+			fmt.Printf("  - %s: %s\n", v.Name, v.Value)
+		}
+		fmt.Println("Include:")
+		for _, inc := range config.Include {
+			fmt.Printf("  - file: %s", inc.File)
+			if inc.Repeat != "" {
+				fmt.Printf(" (repeat: %s)", inc.Repeat)
+			}
+			fmt.Println()
+		}
+		fmt.Println()
+	}
+	
 	if len(config.Include) == 0 {
 		return fmt.Errorf("no 'include' section found in configuration")
 	}
@@ -329,4 +419,112 @@ func (m *MikoManifest) validateDirectories() error {
 	}
 	
 	return nil
+}
+
+// resolveResourcePath resolves a resource path relative to the config file location
+func (m *MikoManifest) resolveResourcePath(configPath, resourcePath string) string {
+	if filepath.IsAbs(resourcePath) {
+		return resourcePath
+	}
+	
+	configDir := filepath.Dir(configPath)
+	return filepath.Join(configDir, resourcePath)
+}
+
+// isDirectory checks if the given path is a directory
+func isDirectory(path string) bool {
+	stat, err := os.Stat(path)
+	return err == nil && stat.IsDir()
+}
+
+// loadConfigFromDirectory loads all YAML files from a directory and merges them
+func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Config, loadChain []string, depth int) error {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		return fmt.Errorf("failed to read directory %s: %w", dirPath, err)
+	}
+	
+	// Filter and sort YAML files
+	var yamlFiles []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		
+		name := entry.Name()
+		if strings.HasSuffix(name, ".yaml") || strings.HasSuffix(name, ".yml") {
+			yamlFiles = append(yamlFiles, filepath.Join(dirPath, name))
+		}
+	}
+	
+	// Process files in alphabetical order (already sorted by ReadDir)
+	for _, yamlFile := range yamlFiles {
+		resourceConfig, err := m.LoadConfigWithResources(yamlFile, loadChain, depth)
+		if err != nil {
+			return fmt.Errorf("failed to load file %s: %w", yamlFile, err)
+		}
+		*baseConfig = *m.mergeConfigs(baseConfig, resourceConfig)
+	}
+	
+	return nil
+}
+
+// mergeConfigs merges two configurations, with the override config taking precedence
+func (m *MikoManifest) mergeConfigs(base, override *Config) *Config {
+	result := &Config{
+		Variables: make([]Variable, 0),
+		Include:   make([]Include, 0),
+	}
+	
+	// Create a map for easier variable merging
+	variableMap := make(map[string]string)
+	
+	// Add base variables
+	for _, v := range base.Variables {
+		variableMap[v.Name] = v.Value
+	}
+	
+	// Override with variables from override config
+	for _, v := range override.Variables {
+		variableMap[v.Name] = v.Value
+	}
+	
+	// Convert back to slice
+	for name, value := range variableMap {
+		result.Variables = append(result.Variables, Variable{
+			Name:  name,
+			Value: value,
+		})
+	}
+	
+	// Merge includes (no duplicates based on file+key combination)
+	includeMap := make(map[string]Include)
+	
+	// Add base includes
+	for _, inc := range base.Include {
+		key := m.getIncludeKey(inc)
+		includeMap[key] = inc
+	}
+	
+	// Add override includes (may override base includes)
+	for _, inc := range override.Include {
+		key := m.getIncludeKey(inc)
+		includeMap[key] = inc
+	}
+	
+	// Convert back to slice
+	for _, inc := range includeMap {
+		result.Include = append(result.Include, inc)
+	}
+	
+	return result
+}
+
+// getIncludeKey generates a unique key for an include based on file and repeat key
+func (m *MikoManifest) getIncludeKey(inc Include) string {
+	if inc.Repeat != "" && len(inc.List) > 0 {
+		// For repeat includes, create a key based on file and first list key
+		return fmt.Sprintf("%s:%s:%s", inc.File, inc.Repeat, inc.List[0].Key)
+	}
+	return inc.File
 }

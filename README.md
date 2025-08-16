@@ -54,12 +54,17 @@ miko-manifest build --env dev --output-dir output
 - `--config`, `-c`: Configuration directory path (default: "config")
 - `--templates`, `-t`: Templates directory path (default: "templates")
 - `--var`: Override variables (format: `--var NAME=VALUE`)
+- `--debug-config`: Show the final merged configuration
+- `--show-config-tree`: Show the hierarchy of included resources
 
 **Examples:**
 
 ```bash
 # Basic build
 miko-manifest build --env dev --output-dir output
+
+# With hierarchical configuration debugging
+miko-manifest build --env dev --output-dir output --show-config-tree --debug-config
 
 # With custom directories
 miko-manifest build --env prod --output-dir dist --config prod-config --templates prod-templates
@@ -180,6 +185,111 @@ include:
 Generates separate files: `service-frontend.yaml`, `service-backend.yaml`.
 
 ## Configuration Structure
+
+### Hierarchical Configuration
+
+Miko-Manifest supports hierarchical configuration through the `resources` section, allowing you to create modular, reusable configurations.
+
+#### Basic Structure
+
+```yaml
+# config/dev.yaml
+resources:
+  - base.yaml          # Include base configuration
+  - components/        # Include all YAML files from directory
+
+variables:
+  - name: environment
+    value: development
+
+include:
+  - file: deployment.yaml
+```
+
+#### Configuration Merging Rules
+
+1. **Load Order**: Resources are processed in the order they appear
+2. **Variable Precedence**: Later definitions override earlier ones
+3. **Include Combination**: All includes are merged (no duplicates)
+4. **Directory Processing**: Files in directories are loaded alphabetically
+
+#### Example: Environment Inheritance
+
+**Base Configuration (`config/base.yaml`)**:
+```yaml
+variables:
+  - name: app_name
+    value: my-app
+  - name: replicas
+    value: "1"
+  - name: image
+    value: nginx
+
+include:
+  - file: deployment.yaml
+  - file: service.yaml
+```
+
+**Component Configuration (`config/components/database.yaml`)**:
+```yaml
+variables:
+  - name: database_host
+    value: localhost
+  - name: database_port
+    value: "5432"
+
+include:
+  - file: configmap.yaml
+    repeat: same-file
+    list:
+      - key: database-config
+        values:
+          - name: config_name
+            value: database-config
+```
+
+**Development Configuration (`config/dev.yaml`)**:
+```yaml
+resources:
+  - base.yaml
+  - components/
+
+variables:
+  - name: replicas
+    value: "1"        # Override for development
+  - name: environment
+    value: development
+
+include:
+  - file: service.yaml  # Additional service for dev
+    repeat: multiple-files
+    list:
+      - key: debug
+        values:
+          - name: service_name
+            value: debug-service
+```
+
+**Result**: The final configuration combines all variables and includes, with development-specific overrides taking precedence.
+
+#### Debugging Configuration
+
+Use debug flags to understand configuration merging:
+
+```bash
+# Show configuration hierarchy
+miko-manifest build --env dev --output-dir output --show-config-tree
+
+# Show final merged configuration
+miko-manifest build --env dev --output-dir output --debug-config
+```
+
+#### Safety Features
+
+- **Circular Dependency Detection**: Prevents infinite loops
+- **Maximum Depth Limit**: Configurable recursion depth (default: 5)
+- **Path Resolution**: Relative paths are resolved correctly
+- **Clear Error Messages**: Descriptive errors for configuration issues
 
 ### Environment Configuration (`config/dev.yaml`)
 
