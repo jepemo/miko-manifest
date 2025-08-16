@@ -215,5 +215,23 @@ include:
 	}
 	fmt.Printf("✓ Created configuration file: %s\n", devConfigPath)
 	
+	// Create example schema configuration file
+	schemaConfigContent := `schemas:
+  # Example CRD from a URL (Crossplane Composition)
+  # - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
+  
+  # Example local file
+  # - ./schemas/my-custom-crd.yaml
+  
+  # Example directory with multiple CRDs
+  # - ./schemas/operators/
+`
+	
+	schemaConfigPath := filepath.Join(configDir, "schemas.yaml")
+	if err := os.WriteFile(schemaConfigPath, []byte(schemaConfigContent), 0644); err != nil {
+		return fmt.Errorf("failed to create schemas.yaml: %w", err)
+	}
+	fmt.Printf("✓ Created schema configuration file: %s\n", schemaConfigPath)
+	
 	return nil
 }

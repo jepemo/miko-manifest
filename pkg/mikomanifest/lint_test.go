@@ -153,9 +153,8 @@ spec:
 		t.Fatalf("Failed to create manifest file: %v", err)
 	}
 	
-	// Test validateKubernetesManifests function
-	// Note: This function returns a bool, not an error
-	result := validateKubernetesManifests(tempDir)
+	// Test validateKubernetesManifests function without schema registry
+	result := validateKubernetesManifests(tempDir, nil)
 	
 	// The validation should pass for a valid manifest
 	if !result {
@@ -176,7 +175,7 @@ spec:
 		t.Fatalf("Failed to create invalid manifest file: %v", err)
 	}
 	
-	result = validateKubernetesManifests(tempDir)
+	result = validateKubernetesManifests(tempDir, nil)
 	
 	// The validation might still pass because the YAML is syntactically correct
 	// but semantically invalid. The actual validation depends on the Kubernetes client
@@ -184,13 +183,13 @@ spec:
 	
 	// Test with empty directory
 	emptyDir := t.TempDir()
-	result = validateKubernetesManifests(emptyDir)
+	result = validateKubernetesManifests(emptyDir, nil)
 	if !result {
 		t.Error("Expected true for empty directory (no files to validate), got false")
 	}
 	
 	// Test with non-existent directory
-	result = validateKubernetesManifests("/non/existent/directory")
+	result = validateKubernetesManifests("/non/existent/directory", nil)
 	// The function returns true for non-existent directories because there are no files to validate
 	// (it treats it as "no files found" which is not an error)
 	t.Logf("validateKubernetesManifests result for non-existent directory: %v", result)

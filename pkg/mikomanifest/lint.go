@@ -13,12 +13,14 @@ import (
 
 // LintOptions contains options for linting
 type LintOptions struct {
-	Directory string
+	Directory    string
+	SchemaConfig string
 }
 
 // CheckOptions contains options for checking
 type CheckOptions struct {
-	ConfigDir string
+	ConfigDir    string
+	SchemaConfig string
 }
 
 // LintDirectory runs native Go YAML linting and kubernetes validation on a directory
@@ -34,12 +36,26 @@ func LintDirectory(options LintOptions) error {
 	} else if !stat.IsDir() {
 		return fmt.Errorf("%s is not a directory", options.Directory)
 	}
+
+	// Load custom schemas if provided
+	var schemaRegistry *SchemaRegistry
+	if options.SchemaConfig != "" {
+		schemaConfig, err := LoadSchemaConfig(options.SchemaConfig)
+		if err != nil {
+			return fmt.Errorf("failed to load schema config: %w", err)
+		}
+		
+		schemaRegistry = NewSchemaRegistry()
+		if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
+			return fmt.Errorf("failed to load custom schemas: %w", err)
+		}
+	}
 	
 	// Run YAML linting
 	yamlLintSuccess := lintYAMLFiles(options.Directory)
 	
 	// Run Kubernetes validation
-	k8sSuccess := validateKubernetesManifests(options.Directory)
+	k8sSuccess := validateKubernetesManifests(options.Directory, schemaRegistry)
 	
 	// Final result
 	if yamlLintSuccess && k8sSuccess {
@@ -73,6 +89,20 @@ func CheckConfigDirectory(options CheckOptions) error {
 		return err
 	} else if !stat.IsDir() {
 		return fmt.Errorf("%s is not a directory", options.ConfigDir)
+	}
+
+	// Load custom schemas if provided (for config validation)
+	var schemaRegistry *SchemaRegistry
+	if options.SchemaConfig != "" {
+		schemaConfig, err := LoadSchemaConfig(options.SchemaConfig)
+		if err != nil {
+			fmt.Printf("WARNING: Failed to load schema config: %v\n", err)
+		} else {
+			schemaRegistry = NewSchemaRegistry()
+			if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
+				fmt.Printf("WARNING: Failed to load custom schemas: %v\n", err)
+			}
+		}
 	}
 	
 	success := lintYAMLFiles(options.ConfigDir)
@@ -240,7 +270,7 @@ func validateYAMLStructure(parsed interface{}, fileName string, docIndex int, is
 }
 
 // validateKubernetesManifests validates Kubernetes manifests in a directory
-func validateKubernetesManifests(directory string) bool {
+func validateKubernetesManifests(directory string, schemaRegistry *SchemaRegistry) bool {
 	fmt.Printf("Validating Kubernetes manifests in %s...\n", directory)
 	
 	// Find YAML files
@@ -265,6 +295,7 @@ func validateKubernetesManifests(directory string) bool {
 	
 	k8sErrors := 0
 	k8sValidated := 0
+	customResourcesValidated := 0
 	
 	for _, yamlFile := range allFiles {
 		content, err := os.ReadFile(yamlFile)
@@ -303,27 +334,44 @@ func validateKubernetesManifests(directory string) bool {
 				continue
 			}
 			
+			docInfo := ""
+			if len(documents) > 1 {
+				docInfo = fmt.Sprintf("[doc %d]", i+1)
+			}
+			
+			// Try custom resource validation first if schema registry is available
+			if schemaRegistry != nil {
+				isCustomResource, err := schemaRegistry.ValidateCustomResource(manifest)
+				if isCustomResource {
+					if err != nil {
+						k8sErrors++
+						fmt.Printf("ERROR: %s%s - Custom resource validation error: %v\n", filepath.Base(yamlFile), docInfo, err)
+					} else {
+						customResourcesValidated++
+						k8sValidated++
+						fmt.Printf("VALID: %s%s - Valid custom resource %s\n", filepath.Base(yamlFile), docInfo, kind)
+					}
+					continue
+				}
+			}
+			
 			// Basic validation - check if it's a valid Kubernetes resource
 			if err := validateKubernetesResource(manifest); err != nil {
 				k8sErrors++
-				docInfo := ""
-				if len(documents) > 1 {
-					docInfo = fmt.Sprintf("[doc %d]", i+1)
-				}
 				fmt.Printf("ERROR: %s%s - Kubernetes validation error: %v\n", filepath.Base(yamlFile), docInfo, err)
 			} else {
 				k8sValidated++
-				docInfo := ""
-				if len(documents) > 1 {
-					docInfo = fmt.Sprintf("[doc %d]", i+1)
-				}
 				fmt.Printf("VALID: %s%s - Valid %s manifest\n", filepath.Base(yamlFile), docInfo, kind)
 			}
 		}
 	}
 	
 	if k8sValidated > 0 {
-		fmt.Printf("SUCCESS: Kubernetes validation: %d manifest(s) validated successfully\n", k8sValidated)
+		fmt.Printf("SUCCESS: Kubernetes validation: %d manifest(s) validated successfully", k8sValidated)
+		if customResourcesValidated > 0 {
+			fmt.Printf(" (%d custom resource(s))", customResourcesValidated)
+		}
+		fmt.Println()
 	}
 	
 	return k8sErrors == 0

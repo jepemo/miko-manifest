@@ -87,6 +87,41 @@ Performs two-step validation:
 1. **YAML Linting**: Using native Go YAML parser
 2. **Kubernetes Validation**: Schema validation for Kubernetes manifests
 
+**Custom Resource Validation:**
+
+```bash
+miko-manifest lint --dir output --schema-config config/schemas.yaml
+```
+
+Extended validation with support for Custom Resource Definitions (CRDs):
+
+- **Custom Schema Loading**: Load CRDs from URLs, files, or directories
+- **Multi-source Support**: Combine schemas from different sources
+- **Automatic Discovery**: Infer GVK information from CRD definitions
+
+### Custom Schema Configuration
+
+Create a `schemas.yaml` file to define custom resource schemas:
+
+```yaml
+schemas:
+  # Load from URL (e.g., Crossplane)
+  - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
+
+  # Load from local file
+  - ./schemas/my-operator-crd.yaml
+
+  # Load from directory (recursive)
+  - ./schemas/operators/
+```
+
+The tool automatically:
+
+- Detects source type (URL, file, or directory)
+- Downloads and caches remote schemas
+- Extracts GVK information from CRDs
+- Validates custom resources against their schemas
+
 ## Template Processing Types
 
 ### 1. Simple File Processing

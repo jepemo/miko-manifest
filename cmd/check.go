@@ -9,6 +9,7 @@ import (
 )
 
 var checkConfigDir string
+var checkSchemaConfig string
 
 var checkCmd = &cobra.Command{
 	Use:   "check",
@@ -16,7 +17,8 @@ var checkCmd = &cobra.Command{
 	Long:  `Check YAML files in the specified config directory using native Go YAML parser.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		options := mikomanifest.CheckOptions{
-			ConfigDir: checkConfigDir,
+			ConfigDir:    checkConfigDir,
+			SchemaConfig: checkSchemaConfig,
 		}
 		
 		if err := mikomanifest.CheckConfigDirectory(options); err != nil {
@@ -28,4 +30,5 @@ var checkCmd = &cobra.Command{
 
 func init() {
 	checkCmd.Flags().StringVarP(&checkConfigDir, "config", "c", "config", "Configuration directory path")
+	checkCmd.Flags().StringVarP(&checkSchemaConfig, "schema-config", "s", "", "Path to schema configuration file for custom resource validation")
 }
