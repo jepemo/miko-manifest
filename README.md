@@ -195,8 +195,8 @@ Miko-Manifest supports hierarchical configuration through the `resources` sectio
 ```yaml
 # config/dev.yaml
 resources:
-  - base.yaml          # Include base configuration
-  - components/        # Include all YAML files from directory
+  - base.yaml # Include base configuration
+  - components/ # Include all YAML files from directory
 
 variables:
   - name: environment
@@ -216,6 +216,7 @@ include:
 #### Example: Environment Inheritance
 
 **Base Configuration (`config/base.yaml`)**:
+
 ```yaml
 variables:
   - name: app_name
@@ -231,6 +232,7 @@ include:
 ```
 
 **Component Configuration (`config/components/database.yaml`)**:
+
 ```yaml
 variables:
   - name: database_host
@@ -249,6 +251,7 @@ include:
 ```
 
 **Development Configuration (`config/dev.yaml`)**:
+
 ```yaml
 resources:
   - base.yaml
@@ -256,12 +259,12 @@ resources:
 
 variables:
   - name: replicas
-    value: "1"        # Override for development
+    value: "1" # Override for development
   - name: environment
     value: development
 
 include:
-  - file: service.yaml  # Additional service for dev
+  - file: service.yaml # Additional service for dev
     repeat: multiple-files
     list:
       - key: debug
