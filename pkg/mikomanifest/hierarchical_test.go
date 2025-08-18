@@ -30,6 +30,9 @@ func TestHierarchicalConfiguration(t *testing.T) {
 	
 	// Create base configuration
 	baseConfig := `---
+schemas:
+  - ./schemas/base-crd.yaml
+
 variables:
   - name: app_name
     value: test-app
@@ -65,6 +68,9 @@ include:
 resources:
   - base.yaml
   - components/
+
+schemas:
+  - ./schemas/dev-specific-crd.yaml
 
 variables:
   - name: version
@@ -158,6 +164,24 @@ data:
 	// Check that component variables are included
 	if variableMap["component_enabled"] != "true" {
 		t.Errorf("Expected component_enabled to be 'true', got '%s'", variableMap["component_enabled"])
+	}
+	
+	// Check that schemas are merged correctly
+	expectedSchemas := map[string]bool{
+		"./schemas/base-crd.yaml":         false,
+		"./schemas/dev-specific-crd.yaml": false,
+	}
+	
+	for _, schema := range config.Schemas {
+		if _, exists := expectedSchemas[schema]; exists {
+			expectedSchemas[schema] = true
+		}
+	}
+	
+	for schema, found := range expectedSchemas {
+		if !found {
+			t.Errorf("Expected schema '%s' not found in merged config", schema)
+		}
 	}
 	
 	// Check that all includes are merged

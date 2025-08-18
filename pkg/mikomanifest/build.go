@@ -13,6 +13,7 @@ import (
 // Config represents the configuration structure
 type Config struct {
 	Resources []string   `yaml:"resources,omitempty"`
+	Schemas   []string   `yaml:"schemas,omitempty"`
 	Variables []Variable `yaml:"variables"`
 	Include   []Include  `yaml:"include"`
 }
@@ -334,6 +335,14 @@ func (m *MikoManifest) Build() error {
 	// Show debug information if requested
 	if m.options.DebugConfig {
 		fmt.Println("\n🔍 Debug: Final merged configuration:")
+		
+		if len(config.Schemas) > 0 {
+			fmt.Println("Schemas:")
+			for _, schema := range config.Schemas {
+				fmt.Printf("  - %s\n", schema)
+			}
+		}
+		
 		fmt.Println("Variables:")
 		for _, v := range config.Variables {
 			fmt.Printf("  - %s: %s\n", v.Name, v.Value)
@@ -390,6 +399,11 @@ func (m *MikoManifest) Build() error {
 		default:
 			return fmt.Errorf("unknown repeat type: %s", include.Repeat)
 		}
+	}
+	
+	// Save environment info for auto-detection during lint
+	if err := m.saveEnvironmentInfo(); err != nil {
+		fmt.Printf("Warning: Failed to save environment info: %v\n", err)
 	}
 	
 	fmt.Println("SUCCESS: Build completed successfully!")
@@ -474,6 +488,7 @@ func (m *MikoManifest) mergeConfigs(base, override *Config) *Config {
 	result := &Config{
 		Variables: make([]Variable, 0),
 		Include:   make([]Include, 0),
+		Schemas:   make([]string, 0),
 	}
 	
 	// Create a map for easier variable merging
@@ -495,6 +510,25 @@ func (m *MikoManifest) mergeConfigs(base, override *Config) *Config {
 			Name:  name,
 			Value: value,
 		})
+	}
+	
+	// Merge schemas (no duplicates)
+	schemaSet := make(map[string]bool)
+	
+	// Add base schemas
+	for _, schema := range base.Schemas {
+		if !schemaSet[schema] {
+			result.Schemas = append(result.Schemas, schema)
+			schemaSet[schema] = true
+		}
+	}
+	
+	// Add override schemas
+	for _, schema := range override.Schemas {
+		if !schemaSet[schema] {
+			result.Schemas = append(result.Schemas, schema)
+			schemaSet[schema] = true
+		}
 	}
 	
 	// Merge includes (no duplicates based on file+key combination)
@@ -527,4 +561,33 @@ func (m *MikoManifest) getIncludeKey(inc Include) string {
 		return fmt.Sprintf("%s:%s:%s", inc.File, inc.Repeat, inc.List[0].Key)
 	}
 	return inc.File
+}
+
+// saveEnvironmentInfo saves the current environment and config directory for auto-detection
+func (m *MikoManifest) saveEnvironmentInfo() error {
+	envInfoPath := filepath.Join(m.options.OutputDir, ".miko-manifest-env")
+	envInfo := fmt.Sprintf("environment: %s\nconfig_dir: %s\n", m.options.Environment, m.options.ConfigDir)
+	return os.WriteFile(envInfoPath, []byte(envInfo), 0644)
+}
+
+// loadEnvironmentInfo loads saved environment information
+func loadEnvironmentInfo(outputDir string) (string, string, error) {
+	envInfoPath := filepath.Join(outputDir, ".miko-manifest-env")
+	data, err := os.ReadFile(envInfoPath)
+	if err != nil {
+		return "", "", err
+	}
+	
+	lines := strings.Split(string(data), "\n")
+	var env, configDir string
+	
+	for _, line := range lines {
+		if strings.HasPrefix(line, "environment: ") {
+			env = strings.TrimSpace(strings.TrimPrefix(line, "environment: "))
+		} else if strings.HasPrefix(line, "config_dir: ") {
+			configDir = strings.TrimSpace(strings.TrimPrefix(line, "config_dir: "))
+		}
+	}
+	
+	return env, configDir, nil
 }
