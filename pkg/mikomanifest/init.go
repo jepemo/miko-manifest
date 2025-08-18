@@ -137,7 +137,11 @@ spec:
 func createConfigFile(configDir string) error {
 	devConfigContent := `---
 # Example configuration file for miko-manifest
-# This demonstrates all three types of file processing
+# This demonstrates all three types of file processing and hierarchical configuration
+
+# Resources section - include other configuration files
+resources:
+  - schemas.yaml  # Include schema definitions for custom resource validation
 
 # Variables section - define variables that can be used throughout
 # the configuration
@@ -216,15 +220,26 @@ include:
 	fmt.Printf("✓ Created configuration file: %s\n", devConfigPath)
 	
 	// Create example schema configuration file
-	schemaConfigContent := `schemas:
-  # Example CRD from a URL (Crossplane Composition)
+	schemaConfigContent := `---
+# Schema configuration for custom resource validation
+# These schemas will be used during lint/validation to validate custom resources
+
+schemas:
+  # Example: Local CRD file (create this file for your custom resources)
+  # - ./schemas/example-database-crd.yaml
+  
+  # Example: Remote CRD from a URL (Crossplane Composition)
   # - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
   
-  # Example local file
-  # - ./schemas/my-custom-crd.yaml
-  
-  # Example directory with multiple CRDs
+  # Example: Directory with multiple CRDs (recursive loading)
   # - ./schemas/operators/
+  
+  # Example: GitOps operator CRDs
+  # - https://raw.githubusercontent.com/argoproj/argo-cd/master/manifests/crds/application-crd.yaml
+  # - https://raw.githubusercontent.com/fluxcd/helm-controller/main/config/crd/bases/helm.toolkit.fluxcd.io_helmreleases.yaml
+
+# Note: Uncomment the schemas you need for your project
+# Schemas defined here will be inherited by any config that includes this file via 'resources'
 `
 	
 	schemaConfigPath := filepath.Join(configDir, "schemas.yaml")
