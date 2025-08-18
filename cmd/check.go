@@ -9,7 +9,9 @@ import (
 )
 
 var checkConfigDir string
+var checkEnvironment string
 var checkSchemaConfig string
+var checkSkipSchemaValidation bool
 
 var checkCmd = &cobra.Command{
 	Use:   "check",
@@ -17,8 +19,10 @@ var checkCmd = &cobra.Command{
 	Long:  `Check YAML files in the specified config directory using native Go YAML parser.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		options := mikomanifest.CheckOptions{
-			ConfigDir:    checkConfigDir,
-			SchemaConfig: checkSchemaConfig,
+			ConfigDir:            checkConfigDir,
+			Environment:          checkEnvironment,
+			SchemaConfig:         checkSchemaConfig,
+			SkipSchemaValidation: checkSkipSchemaValidation,
 		}
 		
 		if err := mikomanifest.CheckConfigDirectory(options); err != nil {
@@ -30,5 +34,7 @@ var checkCmd = &cobra.Command{
 
 func init() {
 	checkCmd.Flags().StringVarP(&checkConfigDir, "config", "c", "config", "Configuration directory path")
-	checkCmd.Flags().StringVarP(&checkSchemaConfig, "schema-config", "s", "", "Path to schema configuration file for custom resource validation")
+	checkCmd.Flags().StringVarP(&checkEnvironment, "env", "e", "", "Environment configuration to use for schema loading")
+	checkCmd.Flags().StringVarP(&checkSchemaConfig, "schema-config", "s", "", "Path to explicit schema configuration file")
+	checkCmd.Flags().BoolVar(&checkSkipSchemaValidation, "skip-schema-validation", false, "Skip custom resource schema validation")
 }

@@ -10,6 +10,9 @@ Miko-Manifest is a CLI application written in Go that provides powerful configur
   - Multiple-files repeat (separate files per key)
 - **Environment Configuration**: YAML-based environment-specific configurations
 - **Variable Override**: Command-line variable overrides
+- **Hierarchical Configuration**: Include and merge configurations with resources section
+- **Integrated Schema Validation**: Schema definitions within environment configurations
+- **Auto-Environment Detection**: Automatic environment detection from build artifacts
 - **YAML Validation**: Native Go YAML validation and Kubernetes manifest validation
 - **Library Architecture**: Core functionality available as a Go library
 
@@ -54,6 +57,7 @@ miko-manifest build --env dev --output-dir output
 - `--config`, `-c`: Configuration directory path (default: "config")
 - `--templates`, `-t`: Templates directory path (default: "templates")
 - `--var`: Override variables (format: `--var NAME=VALUE`)
+- `--validate`: Perform validation after build (equivalent to build + lint)
 - `--debug-config`: Show the final merged configuration
 - `--show-config-tree`: Show the hierarchy of included resources
 
@@ -71,6 +75,9 @@ miko-manifest build --env prod --output-dir dist --config prod-config --template
 
 # With variable overrides
 miko-manifest build --env dev --output-dir output --var app_name=my-app --var replicas=5
+
+# Build and validate in one command
+miko-manifest build --env dev --output-dir output --validate
 ```
 
 ### Validate Configuration
@@ -92,40 +99,101 @@ Performs two-step validation:
 1. **YAML Linting**: Using native Go YAML parser
 2. **Kubernetes Validation**: Schema validation for Kubernetes manifests
 
-**Custom Resource Validation:**
+**Auto-Environment Detection:**
+
+If you've previously built the project, the lint command automatically detects the environment:
 
 ```bash
-miko-manifest lint --dir output --schema-config config/schemas.yaml
+# After building with --env dev
+miko-manifest build --env dev --output-dir output
+
+# Lint automatically detects dev environment and loads schemas
+miko-manifest lint output
 ```
 
-Extended validation with support for Custom Resource Definitions (CRDs):
+**Manual Environment Specification:**
 
-- **Custom Schema Loading**: Load CRDs from URLs, files, or directories
-- **Multi-source Support**: Combine schemas from different sources
-- **Automatic Discovery**: Infer GVK information from CRD definitions
+```bash
+# Explicitly specify environment
+miko-manifest lint --env dev --dir output
 
-### Custom Schema Configuration
+# Skip schema validation for faster linting
+miko-manifest lint --skip-schema-validation --dir output
+```
 
-Create a `schemas.yaml` file to define custom resource schemas:
+**Integrated Schema Validation:**
+
+Schemas are now defined directly in your environment configuration files:
 
 ```yaml
+# config/dev.yaml
+resources:
+  - base.yaml
+
 schemas:
   # Load from URL (e.g., Crossplane)
   - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
-
   # Load from local file
   - ./schemas/my-operator-crd.yaml
-
   # Load from directory (recursive)
   - ./schemas/operators/
+
+variables:
+  - name: environment
+    value: development
 ```
 
-The tool automatically:
+## Command Reference
 
-- Detects source type (URL, file, or directory)
-- Downloads and caches remote schemas
-- Extracts GVK information from CRDs
-- Validates custom resources against their schemas
+### Build Command Options
+
+```bash
+miko-manifest build [flags]
+```
+
+**Flags:**
+
+- `--env`, `-e`: Environment configuration to use (required)
+- `--output-dir`, `-o`: Output directory for generated files (required)
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--templates`, `-t`: Templates directory path (default: "templates")
+- `--var`: Override variables (format: `--var NAME=VALUE`)
+- `--validate`: Perform validation after build (equivalent to build + lint)
+- `--debug-config`: Show the final merged configuration
+- `--show-config-tree`: Show the hierarchy of included resources
+
+### Lint Command Options
+
+```bash
+miko-manifest lint [directory] [flags]
+```
+
+**Flags:**
+
+- `--dir`, `-d`: Directory to validate (can also be specified as positional argument)
+- `--env`, `-e`: Environment to load schemas from (auto-detected if not specified)
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--skip-schema-validation`: Skip schema loading for faster YAML-only validation
+
+### Check Command Options
+
+```bash
+miko-manifest check [flags]
+```
+
+**Flags:**
+
+- `--config`, `-c`: Configuration directory path to validate (default: "config")
+
+### Init Command Options
+
+```bash
+miko-manifest init [flags]
+```
+
+**Flags:**
+
+- `--project-dir`: Directory to initialize project in (default: current directory)
 
 ## Template Processing Types
 
@@ -257,6 +325,11 @@ resources:
   - base.yaml
   - components/
 
+schemas:
+  # CRD schemas for validation
+  - ./schemas/my-operator-crd.yaml
+  - https://raw.githubusercontent.com/example/operator/main/crd.yaml
+
 variables:
   - name: replicas
     value: "1" # Override for development
@@ -293,6 +366,69 @@ miko-manifest build --env dev --output-dir output --debug-config
 - **Maximum Depth Limit**: Configurable recursion depth (default: 5)
 - **Path Resolution**: Relative paths are resolved correctly
 - **Clear Error Messages**: Descriptive errors for configuration issues
+
+### Schema Integration Features
+
+Miko-Manifest now supports integrated schema validation directly within configuration files:
+
+#### Schema Definition in Configuration
+
+Define schemas alongside your environment configuration:
+
+```yaml
+# config/dev.yaml
+resources:
+  - base.yaml
+
+schemas:
+  # Remote CRD from operator
+  - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
+  # Local CRD file
+  - ./schemas/database-operator-crd.yaml
+  # Directory of CRDs (recursive)
+  - ./schemas/operators/
+
+variables:
+  - name: environment
+    value: development
+```
+
+#### Schema Merging and Inheritance
+
+Schemas follow the same hierarchical merging rules as other configuration:
+
+```yaml
+# config/base.yaml
+schemas:
+  - https://raw.githubusercontent.com/kubernetes/api/master/core/v1/configmap.yaml
+
+# config/dev.yaml
+resources:
+  - base.yaml
+
+schemas:
+  - ./schemas/dev-specific-crds/ # Adds to base schemas, no duplicates
+```
+
+#### Auto-Detection Workflow
+
+1. **Build Phase**: Environment information is saved to `.miko-manifest-env`
+2. **Lint Phase**: Automatically detects environment and loads corresponding schemas
+3. **Seamless Validation**: No need to specify schemas separately for linting
+
+```bash
+# Step 1: Build saves environment info
+miko-manifest build --env dev --output-dir output
+
+# Step 2: Lint auto-detects 'dev' and loads schemas from config/dev.yaml
+miko-manifest lint output
+```
+
+#### Performance Options
+
+- `--skip-schema-validation`: Skip schema loading for faster YAML-only validation
+- Auto-caching of remote schemas for improved performance
+- Efficient schema deduplication in hierarchical configurations
 
 ### Environment Configuration (`config/dev.yaml`)
 
