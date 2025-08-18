@@ -20,8 +20,21 @@ var (
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "Build the miko-manifest project",
-	Long:  `Build the miko-manifest project by processing templates with environment-specific configurations.`,
+	Short: "Generate Kubernetes manifests from templates and configuration",
+	Long: `Generate Kubernetes manifests by processing templates with environment-specific configurations.
+
+This command combines templates with configuration to produce ready-to-deploy Kubernetes manifests.
+Use --validate flag to automatically validate generated manifests after build.
+
+Typical workflow:
+  1. miko-manifest config --env <environment>     # Inspect configuration
+  2. miko-manifest check --env <environment>      # Validate configuration  
+  3. miko-manifest build --env <environment>      # Generate manifests
+  4. miko-manifest validate --dir <output-dir>    # Validate generated manifests
+
+Related commands:
+  - Use 'check' to validate configuration before building
+  - Use 'validate' to check generated manifests after building`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Parse command line variables
 		cmdVariables := make(map[string]string)

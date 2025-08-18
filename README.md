@@ -40,6 +40,31 @@ docker pull jepemo/miko-manifest:latest
 
 ## Usage
 
+### Typical Workflow
+
+The miko-manifest CLI follows a clear 4-step workflow for managing Kubernetes manifests:
+
+```bash
+# 1. Inspect configuration (optional but recommended)
+miko-manifest config --env dev
+
+# 2. Validate configuration files 
+miko-manifest check --env dev
+
+# 3. Generate manifests from templates and configuration
+miko-manifest build --env dev --output-dir output
+
+# 4. Validate generated Kubernetes manifests
+miko-manifest validate --dir output
+```
+
+**Command Responsibilities:**
+
+- **`config`**: Inspect and understand configuration structure
+- **`check`**: Validate input configuration files before generation  
+- **`build`**: Generate Kubernetes manifests from templates and config
+- **`validate`**: Validate output manifests for Kubernetes compliance
+
 ### Initialize a Project
 
 ```bash
@@ -115,24 +140,42 @@ miko-manifest config --env dev --schemas
 miko-manifest config --env dev --tree
 ```
 
-### Validate Configuration
+### Validate Configuration Files
 
 ```bash
-miko-manifest check --config config
+miko-manifest check --env dev
 ```
 
-Validates YAML files in the configuration directory using native Go YAML parsing.
+Validates configuration YAML files before generating manifests. This command checks:
 
-### Validate Generated Files
+- YAML syntax in configuration files
+- Configuration structure and required fields  
+- Schema validation for custom resources (if enabled)
+
+**Options:**
+- `--env`, `-e`: Environment configuration to use for schema loading
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--skip-schema-validation`: Skip custom resource schema validation
+
+Use this command to catch configuration errors early in your workflow.
+
+### Validate Generated Manifests
 
 ```bash
 miko-manifest validate --dir output
 ```
 
-Performs two-step validation:
+Validates generated Kubernetes manifest files to ensure they are deployable. This command performs:
 
 1. **YAML Validation**: Using native Go YAML parser
 2. **Kubernetes Validation**: Schema validation for Kubernetes manifests
+3. **Custom Resource Validation**: Using schemas from environment configuration
+
+**Options:**
+- `--dir`, `-d`: Directory containing generated manifests to validate
+- `--env`, `-e`: Environment configuration to use for schema loading
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--skip-schema-validation`: Skip custom resource schema validation
 
 **Auto-Environment Detection:**
 

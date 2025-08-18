@@ -11,10 +11,22 @@ import (
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Display configuration information",
+	Short: "Display configuration information for an environment",
 	Long: `Display configuration information for a specific environment.
-Shows the unified configuration by default, with options to display
-variables, schemas, or the configuration tree.`,
+
+Shows the unified configuration including variables, included files, and schemas.
+Use this command to inspect and understand your configuration structure before building.
+
+Options:
+  --variables: Show only variables in key=value format
+  --schemas: Show list of schema definitions
+  --tree: Show configuration tree structure
+
+Typical workflow:
+  1. miko-manifest config --env <environment>    # Inspect configuration
+  2. miko-manifest check --env <environment>     # Validate configuration
+  3. miko-manifest build --env <environment>     # Generate manifests
+  4. miko-manifest validate --dir <output-dir>   # Validate generated manifests`,
 	RunE: runConfig,
 }
 

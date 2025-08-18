@@ -14,8 +14,23 @@ var checkSkipSchemaValidation bool
 
 var checkCmd = &cobra.Command{
 	Use:   "check",
-	Short: "Check YAML files in the specified config directory",
-	Long:  `Check YAML files in the specified config directory using native Go YAML parser.`,
+	Short: "Validate configuration files before manifest generation",
+	Long: `Validate configuration YAML files in the specified directory before generating Kubernetes manifests.
+
+This command checks the syntax and structure of your configuration files (input) to ensure they are
+valid before running 'build'. It validates:
+  - YAML syntax in configuration files
+  - Configuration structure and required fields
+  - Schema validation for custom resources (if enabled)
+
+Typical workflow:
+  1. miko-manifest check --env <environment>     # Validate configuration
+  2. miko-manifest build --env <environment>     # Generate manifests
+  3. miko-manifest validate --dir <output-dir>   # Validate generated manifests
+
+Related commands:
+  - Use 'validate' to check generated Kubernetes manifests
+  - Use 'config' to inspect configuration values`,
 	Run: func(cmd *cobra.Command, args []string) {
 		options := mikomanifest.CheckOptions{
 			ConfigDir:            checkConfigDir,
