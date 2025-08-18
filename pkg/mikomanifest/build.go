@@ -12,10 +12,12 @@ import (
 
 // Config represents the configuration structure
 type Config struct {
-	Resources []string   `yaml:"resources,omitempty"`
-	Schemas   []string   `yaml:"schemas,omitempty"`
-	Variables []Variable `yaml:"variables"`
-	Include   []Include  `yaml:"include"`
+	Environment string     `yaml:"-"`           // Not serialized, set programmatically
+	ConfigDir   string     `yaml:"-"`           // Not serialized, set programmatically
+	Resources   []string   `yaml:"resources,omitempty"`
+	Schemas     []string   `yaml:"schemas,omitempty"`
+	Variables   []Variable `yaml:"variables"`
+	Include     []Include  `yaml:"include"`
 }
 
 // Variable represents a configuration variable
@@ -44,8 +46,6 @@ type BuildOptions struct {
 	ConfigDir       string
 	TemplatesDir    string
 	Variables       map[string]string
-	DebugConfig     bool
-	ShowConfigTree  bool
 }
 
 // MikoManifest is the main library interface
@@ -61,13 +61,34 @@ func New(options BuildOptions) *MikoManifest {
 }
 
 // LoadConfig loads configuration from ENV.yaml file with hierarchical resource support
+// This is a public function that can be used from external packages
+func LoadConfig(configDir, env string, showTree bool) (*Config, error) {
+	options := BuildOptions{
+		ConfigDir: configDir,
+	}
+	m := New(options)
+	config, err := m.loadConfigInternal(env, showTree)
+	if err != nil {
+		return nil, err
+	}
+	config.Environment = env
+	config.ConfigDir = configDir
+	return config, nil
+}
+
+// loadConfigInternal loads configuration from ENV.yaml file with hierarchical resource support
 func (m *MikoManifest) LoadConfig(env string) (*Config, error) {
+	return m.loadConfigInternal(env, false)
+}
+
+// loadConfigInternal is the internal implementation
+func (m *MikoManifest) loadConfigInternal(env string, showTree bool) (*Config, error) {
 	configPath := filepath.Join(m.options.ConfigDir, fmt.Sprintf("%s.yaml", env))
-	return m.LoadConfigWithResources(configPath, make([]string, 0), 0)
+	return m.LoadConfigWithResources(configPath, make([]string, 0), 0, showTree)
 }
 
 // LoadConfigWithResources loads configuration with resource inclusion and circular dependency detection
-func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []string, depth int) (*Config, error) {
+func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []string, depth int, showTree bool) (*Config, error) {
 	// Check for maximum recursion depth
 	const maxDepth = 5
 	if depth > maxDepth {
@@ -88,7 +109,7 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 		return nil, fmt.Errorf("configuration file %s not found", configPath)
 	}
 	
-	if m.options.ShowConfigTree {
+	if showTree {
 		indent := strings.Repeat("  ", depth)
 		fmt.Printf("%s📄 Loading: %s\n", indent, configPath)
 	}
@@ -105,7 +126,7 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 	
 	// Process resources if they exist
 	if len(config.Resources) > 0 {
-		if m.options.ShowConfigTree {
+		if showTree {
 			indent := strings.Repeat("  ", depth)
 			fmt.Printf("%s📁 Processing %d resource(s):\n", indent, len(config.Resources))
 		}
@@ -119,7 +140,7 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 		for _, resource := range config.Resources {
 			resourcePath := m.resolveResourcePath(configPath, resource)
 			
-			if m.options.ShowConfigTree {
+			if showTree {
 				indent := strings.Repeat("  ", depth+1)
 				if isDirectory(resourcePath) {
 					fmt.Printf("%s📂 %s (directory)\n", indent, resource)
@@ -130,12 +151,12 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 			
 			if isDirectory(resourcePath) {
 				// Load all YAML files from directory in alphabetical order
-				if err := m.loadConfigFromDirectory(resourcePath, baseConfig, currentChain, depth+1); err != nil {
+				if err := m.loadConfigFromDirectory(resourcePath, baseConfig, currentChain, depth+1, showTree); err != nil {
 					return nil, fmt.Errorf("failed to load from directory %s: %w", resourcePath, err)
 				}
 			} else {
 				// Load single file
-				resourceConfig, err := m.LoadConfigWithResources(resourcePath, currentChain, depth+1)
+				resourceConfig, err := m.LoadConfigWithResources(resourcePath, currentChain, depth+1, showTree)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load resource %s: %w", resourcePath, err)
 				}
@@ -332,32 +353,6 @@ func (m *MikoManifest) Build() error {
 		return err
 	}
 	
-	// Show debug information if requested
-	if m.options.DebugConfig {
-		fmt.Println("\n🔍 Debug: Final merged configuration:")
-		
-		if len(config.Schemas) > 0 {
-			fmt.Println("Schemas:")
-			for _, schema := range config.Schemas {
-				fmt.Printf("  - %s\n", schema)
-			}
-		}
-		
-		fmt.Println("Variables:")
-		for _, v := range config.Variables {
-			fmt.Printf("  - %s: %s\n", v.Name, v.Value)
-		}
-		fmt.Println("Include:")
-		for _, inc := range config.Include {
-			fmt.Printf("  - file: %s", inc.File)
-			if inc.Repeat != "" {
-				fmt.Printf(" (repeat: %s)", inc.Repeat)
-			}
-			fmt.Println()
-		}
-		fmt.Println()
-	}
-	
 	if len(config.Include) == 0 {
 		return fmt.Errorf("no 'include' section found in configuration")
 	}
@@ -452,7 +447,7 @@ func isDirectory(path string) bool {
 }
 
 // loadConfigFromDirectory loads all YAML files from a directory and merges them
-func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Config, loadChain []string, depth int) error {
+func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Config, loadChain []string, depth int, showTree bool) error {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return fmt.Errorf("failed to read directory %s: %w", dirPath, err)
@@ -473,7 +468,7 @@ func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Confi
 	
 	// Process files in alphabetical order (already sorted by ReadDir)
 	for _, yamlFile := range yamlFiles {
-		resourceConfig, err := m.LoadConfigWithResources(yamlFile, loadChain, depth)
+		resourceConfig, err := m.LoadConfigWithResources(yamlFile, loadChain, depth, showTree)
 		if err != nil {
 			return fmt.Errorf("failed to load file %s: %w", yamlFile, err)
 		}

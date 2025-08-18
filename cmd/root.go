@@ -25,4 +25,5 @@ func init() {
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(lintCmd)
 	rootCmd.AddCommand(checkCmd)
+	rootCmd.AddCommand(configCmd)
 }
