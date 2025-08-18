@@ -13,18 +13,32 @@ import (
 
 // LintOptions contains options for linting
 type LintOptions struct {
-	Directory    string
-	SchemaConfig string
+	Directory            string
+	Environment          string
+	ConfigDir            string
+	SchemaConfig         string
+	SkipSchemaValidation bool
 }
 
 // CheckOptions contains options for checking
 type CheckOptions struct {
-	ConfigDir    string
-	SchemaConfig string
+	ConfigDir            string
+	Environment          string
+	SchemaConfig         string
+	SkipSchemaValidation bool
 }
 
 // LintDirectory runs native Go YAML linting and kubernetes validation on a directory
 func LintDirectory(options LintOptions) error {
+	// Auto-detect environment if not provided
+	if options.Environment == "" && options.SchemaConfig == "" {
+		if env, configDir, err := loadEnvironmentInfo(options.Directory); err == nil {
+			options.Environment = env
+			options.ConfigDir = configDir
+			fmt.Printf("🔍 Auto-detected environment: %s\n", env)
+		}
+	}
+	
 	fmt.Printf("Linting YAML files in directory: %s\n", options.Directory)
 	
 	// Check if directory exists
@@ -37,17 +51,29 @@ func LintDirectory(options LintOptions) error {
 		return fmt.Errorf("%s is not a directory", options.Directory)
 	}
 
-	// Load custom schemas if provided
+	// Load custom schemas if not skipped
 	var schemaRegistry *SchemaRegistry
-	if options.SchemaConfig != "" {
-		schemaConfig, err := LoadSchemaConfig(options.SchemaConfig)
-		if err != nil {
-			return fmt.Errorf("failed to load schema config: %w", err)
-		}
-		
-		schemaRegistry = NewSchemaRegistry()
-		if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
-			return fmt.Errorf("failed to load custom schemas: %w", err)
+	if !options.SkipSchemaValidation {
+		// Priority: explicit schema config > environment config
+		if options.SchemaConfig != "" {
+			schemaConfig, err := LoadSchemaConfig(options.SchemaConfig)
+			if err != nil {
+				return fmt.Errorf("failed to load schema config: %w", err)
+			}
+			
+			schemaRegistry = NewSchemaRegistry()
+			if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
+				return fmt.Errorf("failed to load custom schemas: %w", err)
+			}
+		} else if options.Environment != "" {
+			// Load schemas from environment configuration
+			var err error
+			schemaRegistry, err = loadSchemasFromEnvironment(options.Environment, options.ConfigDir)
+			if err != nil {
+				fmt.Printf("Warning: Failed to load schemas from environment config: %v\n", err)
+			} else if schemaRegistry != nil {
+				fmt.Printf("✓ Loaded schemas from environment: %s\n", options.Environment)
+			}
 		}
 	}
 	
@@ -93,14 +119,26 @@ func CheckConfigDirectory(options CheckOptions) error {
 
 	// Load custom schemas if provided (for config validation)
 	var schemaRegistry *SchemaRegistry
-	if options.SchemaConfig != "" {
-		schemaConfig, err := LoadSchemaConfig(options.SchemaConfig)
-		if err != nil {
-			fmt.Printf("WARNING: Failed to load schema config: %v\n", err)
-		} else {
-			schemaRegistry = NewSchemaRegistry()
-			if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
-				fmt.Printf("WARNING: Failed to load custom schemas: %v\n", err)
+	if !options.SkipSchemaValidation {
+		// Priority: explicit schema config > environment config
+		if options.SchemaConfig != "" {
+			schemaConfig, err := LoadSchemaConfig(options.SchemaConfig)
+			if err != nil {
+				fmt.Printf("WARNING: Failed to load schema config: %v\n", err)
+			} else {
+				schemaRegistry = NewSchemaRegistry()
+				if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
+					fmt.Printf("WARNING: Failed to load custom schemas: %v\n", err)
+				}
+			}
+		} else if options.Environment != "" {
+			// Load schemas from environment configuration
+			var err error
+			schemaRegistry, err = loadSchemasFromEnvironment(options.Environment, options.ConfigDir)
+			if err != nil {
+				fmt.Printf("Warning: Failed to load schemas from environment config: %v\n", err)
+			} else if schemaRegistry != nil {
+				fmt.Printf("✓ Loaded schemas from environment: %s\n", options.Environment)
 			}
 		}
 	}
@@ -437,4 +475,43 @@ func validateBasicStructure(manifest map[string]interface{}) error {
 	}
 	
 	return nil
+}
+
+// loadSchemasFromEnvironment loads schemas from the environment configuration
+func loadSchemasFromEnvironment(environment, configDir string) (*SchemaRegistry, error) {
+	if environment == "" || configDir == "" {
+		return nil, fmt.Errorf("environment and config directory are required")
+	}
+	
+	// Create a temporary MikoManifest to load the config
+	tempOptions := BuildOptions{
+		Environment: environment,
+		ConfigDir:   configDir,
+	}
+	mikoManifest := New(tempOptions)
+	
+	// Load configuration
+	config, err := mikoManifest.LoadConfig(environment)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load environment config: %w", err)
+	}
+	
+	// If no schemas defined, return nil
+	if len(config.Schemas) == 0 {
+		return nil, nil
+	}
+	
+	// Create schema registry and load schemas
+	schemaRegistry := NewSchemaRegistry()
+	
+	// Create a temporary SchemaConfig structure for compatibility
+	schemaConfig := &SchemaConfig{
+		Schemas: config.Schemas,
+	}
+	
+	if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
+		return nil, fmt.Errorf("failed to load schemas from environment config: %w", err)
+	}
+	
+	return schemaRegistry, nil
 }

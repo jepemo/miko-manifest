@@ -17,6 +17,7 @@ var (
 	buildVariables     []string
 	buildDebugConfig   bool
 	buildShowConfigTree bool
+	buildValidate      bool
 )
 
 var buildCmd = &cobra.Command{
@@ -51,6 +52,21 @@ var buildCmd = &cobra.Command{
 			fmt.Printf("Error building project: %v\n", err)
 			os.Exit(1)
 		}
+		
+		// Run validation if requested
+		if buildValidate {
+			fmt.Println("\n🔍 Running validation...")
+			lintOptions := mikomanifest.LintOptions{
+				Directory:   buildOutputDir,
+				Environment: buildEnv,
+				ConfigDir:   buildConfigDir,
+			}
+			
+			if err := mikomanifest.LintDirectory(lintOptions); err != nil {
+				fmt.Printf("Error during validation: %v\n", err)
+				os.Exit(1)
+			}
+		}
 	},
 }
 
@@ -62,6 +78,7 @@ func init() {
 	buildCmd.Flags().StringSliceVarP(&buildVariables, "var", "", []string{}, "Override variables in format: --var VAR_NAME=VALUE")
 	buildCmd.Flags().BoolVar(&buildDebugConfig, "debug-config", false, "Show the final merged configuration")
 	buildCmd.Flags().BoolVar(&buildShowConfigTree, "show-config-tree", false, "Show the hierarchy of included resources")
+	buildCmd.Flags().BoolVar(&buildValidate, "validate", false, "Run validation after build using schemas from environment config")
 	
 	buildCmd.MarkFlagRequired("env")
 	buildCmd.MarkFlagRequired("output-dir")
