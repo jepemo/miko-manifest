@@ -1,9 +1,0 @@
-apiVersion: example.com/v1
-kind: Database
-metadata:
-  name: my-database
-  namespace: default
-spec:
-  host: "localhost"
-  port: 5432
-  name: "myapp"

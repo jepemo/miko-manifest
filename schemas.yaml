@@ -1,9 +1,0 @@
-schemas:
-  # Example CRD from a URL (Crossplane Composition)
-  - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
-
-  # Example local file
-  - ./schemas/example-database-crd.yaml
-
-  # Example directory with multiple CRDs
-  # - ./schemas/operators/
