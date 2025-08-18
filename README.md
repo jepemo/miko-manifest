@@ -1,5 +1,13 @@
 # Miko-Manifest
 
+[![GitHub Release](https://img.shields.io/github/v/release/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/releases)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jepemo/miko-manifest/ci.yml)](https://github.com/jepemo/miko-manifest/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jepemo/miko-manifest)](https://goreportcard.com/report/github.com/jepemo/miko-manifest)
+[![GitHub License](https://img.shields.io/github/license/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/blob/main/LICENSE)
+[![GitHub Issues](https://img.shields.io/github/issues/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/pulls)
+[![GitHub Stars](https://img.shields.io/github/stars/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/stargazers)
+
 Miko-Manifest is a CLI application written in Go that provides powerful configuration management for Kubernetes manifests with templating capabilities.
 
 ## Features
@@ -58,17 +66,12 @@ miko-manifest build --env dev --output-dir output
 - `--templates`, `-t`: Templates directory path (default: "templates")
 - `--var`: Override variables (format: `--var NAME=VALUE`)
 - `--validate`: Perform validation after build (equivalent to build + lint)
-- `--debug-config`: Show the final merged configuration
-- `--show-config-tree`: Show the hierarchy of included resources
 
 **Examples:**
 
 ```bash
 # Basic build
 miko-manifest build --env dev --output-dir output
-
-# With hierarchical configuration debugging
-miko-manifest build --env dev --output-dir output --show-config-tree --debug-config
 
 # With custom directories
 miko-manifest build --env prod --output-dir dist --config prod-config --templates prod-templates
@@ -78,6 +81,38 @@ miko-manifest build --env dev --output-dir output --var app_name=my-app --var re
 
 # Build and validate in one command
 miko-manifest build --env dev --output-dir output --validate
+```
+
+### Display Configuration
+
+```bash
+miko-manifest config --env dev
+```
+
+Display configuration information for a specific environment with multiple viewing options:
+
+**Available Parameters:**
+
+- `--env`, `-e`: Environment configuration to use (required)
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--variables`: Show only variables in `var=value` format (one per line)
+- `--schemas`: Show list of all configured schemas
+- `--tree`: Show the hierarchy of included resources with detailed loading process
+
+**Examples:**
+
+```bash
+# Show complete unified configuration
+miko-manifest config --env dev
+
+# Show only variables (useful for scripts)
+miko-manifest config --env dev --variables
+
+# Show configured schemas
+miko-manifest config --env dev --schemas
+
+# Show hierarchical resource loading tree
+miko-manifest config --env dev --tree
 ```
 
 ### Validate Configuration
