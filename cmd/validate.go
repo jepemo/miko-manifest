@@ -11,13 +11,12 @@ import (
 var validateDir string
 var validateEnvironment string
 var validateConfigDir string
-var validateSchemaConfig string
 var validateSkipSchemaValidation bool
 
 var validateCmd = &cobra.Command{
 	Use:   "validate",
 	Short: "Validate YAML files in the specified directory",
-	Long:  `Validate YAML files in the specified directory using native Go YAML parser and validate Kubernetes manifests. Supports custom resource validation using schemas from environment configuration or explicit schema files.`,
+	Long:  `Validate YAML files in the specified directory using native Go YAML parser and validate Kubernetes manifests. Supports custom resource validation using schemas from environment configuration.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// If no directory specified but environment is provided, try to detect from environment info
 		if validateDir == "" && validateEnvironment != "" {
@@ -38,7 +37,6 @@ var validateCmd = &cobra.Command{
 			Directory:            validateDir,
 			Environment:          validateEnvironment,
 			ConfigDir:            validateConfigDir,
-			SchemaConfig:         validateSchemaConfig,
 			SkipSchemaValidation: validateSkipSchemaValidation,
 		}
 		
@@ -53,6 +51,5 @@ func init() {
 	validateCmd.Flags().StringVarP(&validateDir, "dir", "d", "", "Directory to validate for YAML files")
 	validateCmd.Flags().StringVarP(&validateEnvironment, "env", "e", "", "Environment configuration to use for schema loading")
 	validateCmd.Flags().StringVarP(&validateConfigDir, "config", "c", "config", "Configuration directory path (used with --env)")
-	validateCmd.Flags().StringVarP(&validateSchemaConfig, "schema-config", "s", "", "Path to explicit schema configuration file")
 	validateCmd.Flags().BoolVar(&validateSkipSchemaValidation, "skip-schema-validation", false, "Skip custom resource schema validation")
 }

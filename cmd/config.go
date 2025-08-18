@@ -35,7 +35,8 @@ func init() {
 	configCmd.Flags().BoolVar(&configOptions.Variables, "variables", false, "Show only variables in format: var=value")
 	configCmd.Flags().BoolVar(&configOptions.Schemas, "schemas", false, "Show list of all schemas")
 
-	configCmd.MarkFlagRequired("env")
+	// Mark required flag - ignore error as it's only for documentation purposes
+	_ = configCmd.MarkFlagRequired("env")
 }
 
 func runConfig(cmd *cobra.Command, args []string) error {

@@ -10,7 +10,7 @@ var rootCmd = &cobra.Command{
 	Long: `miko-manifest is a powerful CLI tool for managing Kubernetes manifest configurations.
 It provides templating capabilities using Go templates and supports multiple deployment patterns.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 

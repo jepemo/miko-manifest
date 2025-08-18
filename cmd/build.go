@@ -74,6 +74,7 @@ func init() {
 	buildCmd.Flags().StringSliceVarP(&buildVariables, "var", "", []string{}, "Override variables in format: --var VAR_NAME=VALUE")
 	buildCmd.Flags().BoolVar(&buildValidate, "validate", false, "Run validation after build using schemas from environment config")
 	
-	buildCmd.MarkFlagRequired("env")
-	buildCmd.MarkFlagRequired("output-dir")
+	// Mark required flags - ignore errors as they're only for documentation purposes
+	_ = buildCmd.MarkFlagRequired("env")
+	_ = buildCmd.MarkFlagRequired("output-dir")
 }

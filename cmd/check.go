@@ -10,7 +10,6 @@ import (
 
 var checkConfigDir string
 var checkEnvironment string
-var checkSchemaConfig string
 var checkSkipSchemaValidation bool
 
 var checkCmd = &cobra.Command{
@@ -21,7 +20,6 @@ var checkCmd = &cobra.Command{
 		options := mikomanifest.CheckOptions{
 			ConfigDir:            checkConfigDir,
 			Environment:          checkEnvironment,
-			SchemaConfig:         checkSchemaConfig,
 			SkipSchemaValidation: checkSkipSchemaValidation,
 		}
 		
@@ -35,6 +33,5 @@ var checkCmd = &cobra.Command{
 func init() {
 	checkCmd.Flags().StringVarP(&checkConfigDir, "config", "c", "config", "Configuration directory path")
 	checkCmd.Flags().StringVarP(&checkEnvironment, "env", "e", "", "Environment configuration to use for schema loading")
-	checkCmd.Flags().StringVarP(&checkSchemaConfig, "schema-config", "s", "", "Path to explicit schema configuration file")
 	checkCmd.Flags().BoolVar(&checkSkipSchemaValidation, "skip-schema-validation", false, "Skip custom resource schema validation")
 }

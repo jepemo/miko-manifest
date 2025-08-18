@@ -48,6 +48,7 @@ func TestBuildOptions_Validate(t *testing.T) {
 				// For now, we'll just check that the options are set correctly
 				if m.options.Environment == "" && tt.wantErr {
 					// This would fail in a real validation scenario
+					t.Logf("Empty environment detected as expected for error case")
 				}
 			}
 		})
@@ -253,9 +254,15 @@ func TestBuildIntegration(t *testing.T) {
 	outputDir := filepath.Join(tempDir, "output")
 
 	// Create directories
-	os.MkdirAll(configDir, 0755)
-	os.MkdirAll(templatesDir, 0755)
-	os.MkdirAll(outputDir, 0755)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatalf("Failed to create config directory: %v", err)
+	}
+	if err := os.MkdirAll(templatesDir, 0755); err != nil {
+		t.Fatalf("Failed to create templates directory: %v", err)
+	}
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		t.Fatalf("Failed to create output directory: %v", err)
+	}
 
 	// Create a config file
 	configContent := `variables:
