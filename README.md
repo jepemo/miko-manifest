@@ -65,7 +65,7 @@ miko-manifest build --env dev --output-dir output
 - `--config`, `-c`: Configuration directory path (default: "config")
 - `--templates`, `-t`: Templates directory path (default: "templates")
 - `--var`: Override variables (format: `--var NAME=VALUE`)
-- `--validate`: Perform validation after build (equivalent to build + lint)
+- `--validate`: Perform validation after build (equivalent to build + validate)
 
 **Examples:**
 
@@ -123,37 +123,37 @@ miko-manifest check --config config
 
 Validates YAML files in the configuration directory using native Go YAML parsing.
 
-### Lint Generated Files
+### Validate Generated Files
 
 ```bash
-miko-manifest lint --dir output
+miko-manifest validate --dir output
 ```
 
 Performs two-step validation:
 
-1. **YAML Linting**: Using native Go YAML parser
+1. **YAML Validation**: Using native Go YAML parser
 2. **Kubernetes Validation**: Schema validation for Kubernetes manifests
 
 **Auto-Environment Detection:**
 
-If you've previously built the project, the lint command automatically detects the environment:
+If you've previously built the project, the validate command automatically detects the environment:
 
 ```bash
 # After building with --env dev
 miko-manifest build --env dev --output-dir output
 
-# Lint automatically detects dev environment and loads schemas
-miko-manifest lint output
+# Validate automatically detects dev environment and loads schemas
+miko-manifest validate output
 ```
 
 **Manual Environment Specification:**
 
 ```bash
 # Explicitly specify environment
-miko-manifest lint --env dev --dir output
+miko-manifest validate --env dev --dir output
 
-# Skip schema validation for faster linting
-miko-manifest lint --skip-schema-validation --dir output
+# Skip schema validation for faster validation
+miko-manifest validate --skip-schema-validation --dir output
 ```
 
 **Integrated Schema Validation:**
@@ -193,14 +193,14 @@ miko-manifest build [flags]
 - `--config`, `-c`: Configuration directory path (default: "config")
 - `--templates`, `-t`: Templates directory path (default: "templates")
 - `--var`: Override variables (format: `--var NAME=VALUE`)
-- `--validate`: Perform validation after build (equivalent to build + lint)
+- `--validate`: Perform validation after build (equivalent to build + validate)
 - `--debug-config`: Show the final merged configuration
 - `--show-config-tree`: Show the hierarchy of included resources
 
-### Lint Command Options
+### Validate Command Options
 
 ```bash
-miko-manifest lint [directory] [flags]
+miko-manifest validate [directory] [flags]
 ```
 
 **Flags:**
@@ -448,15 +448,15 @@ schemas:
 #### Auto-Detection Workflow
 
 1. **Build Phase**: Environment information is saved to `.miko-manifest-env`
-2. **Lint Phase**: Automatically detects environment and loads corresponding schemas
-3. **Seamless Validation**: No need to specify schemas separately for linting
+2. **Validate Phase**: Automatically detects environment and loads corresponding schemas
+3. **Seamless Validation**: No need to specify schemas separately for validation
 
 ```bash
 # Step 1: Build saves environment info
 miko-manifest build --env dev --output-dir output
 
-# Step 2: Lint auto-detects 'dev' and loads schemas from config/dev.yaml
-miko-manifest lint output
+# Step 2: Validate auto-detects 'dev' and loads schemas from config/dev.yaml
+miko-manifest validate output
 ```
 
 #### Performance Options
@@ -535,8 +535,8 @@ docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest build \
   --config /workspace/config \
   --templates /workspace/templates
 
-# Lint generated files
-docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest lint --dir /workspace/output
+# Validate generated files
+docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest validate --dir /workspace/output
 ```
 
 ### CI/CD Pipeline Examples
@@ -571,7 +571,7 @@ jobs:
             --templates /workspace/templates
 
       - name: Validate generated manifests
-        run: docker run --rm -v "${{ github.workspace }}:/workspace" $MIKO_IMAGE lint --dir /workspace/output
+        run: docker run --rm -v "${{ github.workspace }}:/workspace" $MIKO_IMAGE validate --dir /workspace/output
 ```
 
 **GitLab CI:**
@@ -602,7 +602,7 @@ verify-manifests:
   stage: verify
   image: jepemo/miko-manifest:latest
   script:
-    - miko-manifest lint --dir output/
+    - miko-manifest validate --dir output/
 ```
 
 ## Library Usage

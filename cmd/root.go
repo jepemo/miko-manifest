@@ -23,7 +23,7 @@ func init() {
 	// Add all subcommands
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(buildCmd)
-	rootCmd.AddCommand(lintCmd)
+	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(configCmd)
 }
