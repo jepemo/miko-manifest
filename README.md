@@ -48,7 +48,7 @@ The miko-manifest CLI follows a clear 4-step workflow for managing Kubernetes ma
 # 1. Inspect configuration (optional but recommended)
 miko-manifest config --env dev
 
-# 2. Validate configuration files 
+# 2. Validate configuration files
 miko-manifest check --env dev
 
 # 3. Generate manifests from templates and configuration
@@ -61,7 +61,7 @@ miko-manifest validate --dir output
 **Command Responsibilities:**
 
 - **`config`**: Inspect and understand configuration structure
-- **`check`**: Validate input configuration files before generation  
+- **`check`**: Validate input configuration files before generation
 - **`build`**: Generate Kubernetes manifests from templates and config
 - **`validate`**: Validate output manifests for Kubernetes compliance
 
@@ -149,10 +149,11 @@ miko-manifest check --env dev
 Validates configuration YAML files before generating manifests. This command checks:
 
 - YAML syntax in configuration files
-- Configuration structure and required fields  
+- Configuration structure and required fields
 - Schema validation for custom resources (if enabled)
 
 **Options:**
+
 - `--env`, `-e`: Environment configuration to use for schema loading
 - `--config`, `-c`: Configuration directory path (default: "config")
 - `--skip-schema-validation`: Skip custom resource schema validation
@@ -172,6 +173,7 @@ Validates generated Kubernetes manifest files to ensure they are deployable. Thi
 3. **Custom Resource Validation**: Using schemas from environment configuration
 
 **Options:**
+
 - `--dir`, `-d`: Directory containing generated manifests to validate
 - `--env`, `-e`: Environment configuration to use for schema loading
 - `--config`, `-c`: Configuration directory path (default: "config")

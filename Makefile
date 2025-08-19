@@ -16,7 +16,7 @@ GOMOD=$(GOCMD) mod
 GOFMT=$(GOCMD) fmt
 
 # Build targets
-.PHONY: all build clean test test-coverage test-race test-verbose deps fmt lint docker help
+.PHONY: all build clean clean-all test test-coverage test-race test-verbose deps fmt lint docker help
 
 all: test build
 
@@ -26,6 +26,11 @@ build:
 clean:
 	$(GOCLEAN)
 	rm -f $(BINARY_NAME)
+
+clean-all: clean
+	@echo "Cleaning all artifacts and directories..."
+	rm -rf config templates output
+	@echo "Cleaned: binary, config/, templates/, and output/ directories"
 
 # Test targets
 test:
@@ -110,6 +115,7 @@ help:
 	@echo "  all           - Run tests and build"
 	@echo "  build         - Build the binary"
 	@echo "  clean         - Clean build artifacts"
+	@echo "  clean-all     - Clean build artifacts and remove config/, templates/, output/ directories"
 	@echo "  test          - Run all tests"
 	@echo "  test-coverage - Run tests with coverage report"
 	@echo "  test-race     - Run tests with race detector"
