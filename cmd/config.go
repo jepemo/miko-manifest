@@ -20,13 +20,7 @@ Use this command to inspect and understand your configuration structure before b
 Options:
   --variables: Show only variables in key=value format
   --schemas: Show list of schema definitions
-  --tree: Show configuration tree structure
-
-Typical workflow:
-  1. miko-manifest config --env <environment>    # Inspect configuration
-  2. miko-manifest check                         # Validate configuration
-  3. miko-manifest build --env <environment>     # Generate manifests
-  4. miko-manifest validate --dir <output-dir>   # Validate generated manifests`,
+  --tree: Show configuration tree structure`,
 	RunE: runConfig,
 }
 
