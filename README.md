@@ -10,788 +10,181 @@
 
 Miko-Manifest is a CLI application written in Go that provides powerful configuration management for Kubernetes manifests with templating capabilities.
 
-## Features
+go test ./...
 
-- **Template Processing**: Supports Go templates with three processing patterns:
-  - Simple file processing
-  - Same-file repeat (multiple sections in one file)
-  - Multiple-files repeat (separate files per key)
-- **Environment Configuration**: YAML-based environment-specific configurations
-- **Variable Override**: Command-line variable overrides
-- **Hierarchical Configuration**: Include and merge configurations with resources section
-- **Integrated Schema Validation**: Schema definitions within environment configurations
-- **Auto-Environment Detection**: Automatic environment detection from build artifacts
-- **YAML Validation**: Native Go YAML validation and Kubernetes manifest validation
-- **Library Architecture**: Core functionality available as a Go library
+## Miko-Manifest
 
-## Installation
+[![Release](https://img.shields.io/github/v/release/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/jepemo/miko-manifest/ci.yml)](https://github.com/jepemo/miko-manifest/actions)
+[![Go Report](https://goreportcard.com/badge/github.com/jepemo/miko-manifest)](https://goreportcard.com/report/github.com/jepemo/miko-manifest)
+[![License](https://img.shields.io/github/license/jepemo/miko-manifest)](LICENSE)
 
-### From Source
+Declarative, hierarchical configuration and robust templating for Kubernetes manifests. Fast, deterministic, script‑friendly.
 
+---
+
+### 1. Purpose
+
+Miko-Manifest unifies three concerns normally spread across ad‑hoc scripts:
+
+1. Structured, hierarchical environment configuration (YAML with controlled merging).
+2. Deterministic manifest generation via Go templates (single, repeated-in-file, or repeated-to-multiple-files patterns).
+3. Integrated validation (YAML structure, Kubernetes schemas, and custom CRDs) before and after generation.
+
+The result: repeatable builds, early failure detection, and transparent configuration provenance.
+
+### 2. Quick Start
+
+Install (latest tagged version):
 ```bash
 go install github.com/jepemo/miko-manifest@latest
 ```
 
-### Using Docker
-
-```bash
-docker pull jepemo/miko-manifest:latest
-```
-
-## Usage
-
-### Typical Workflow
-
-The miko-manifest CLI follows a clear 4-step workflow for managing Kubernetes manifests:
-
-```bash
-# 1. Inspect configuration (optional but recommended)
-miko-manifest config --env dev
-
-# 2. Validate configuration files
-miko-manifest check
-
-# 3. Generate manifests from templates and configuration
-miko-manifest build --env dev --output-dir output
-
-# 4. Validate generated Kubernetes manifests
-miko-manifest validate --dir output
-```
-
-**Command Responsibilities:**
-
-- **`config`**: Inspect and understand configuration structure
-- **`check`**: Validate input configuration files before generation
-- **`build`**: Generate Kubernetes manifests from templates and config
-- **`validate`**: Validate output manifests for Kubernetes compliance
-
-### Initialize a Project
-
+Scaffold a project:
 ```bash
 miko-manifest init
 ```
 
-This command creates:
-
-- `templates/`: Directory for Go template files
-- `config/`: Directory for environment-specific YAML configurations
-- Example files demonstrating all three processing patterns
-
-### Build Project
-
+Generate manifests for an environment:
 ```bash
 miko-manifest build --env dev --output-dir output
 ```
 
-**Available Parameters:**
-
-- `--env`, `-e`: Environment configuration to use (required)
-- `--output-dir`, `-o`: Output directory for generated files (required)
-- `--config`, `-c`: Configuration directory path (default: "config")
-- `--templates`, `-t`: Templates directory path (default: "templates")
-- `--var`: Override variables (format: `--var NAME=VALUE`)
-- `--validate`: Perform validation after build (equivalent to build + validate)
-
-**Examples:**
-
-```bash
-# Basic build
-miko-manifest build --env dev --output-dir output
-
-# With custom directories
-miko-manifest build --env prod --output-dir dist --config prod-config --templates prod-templates
-
-# With variable overrides
-miko-manifest build --env dev --output-dir output --var app_name=my-app --var replicas=5
-
-# Build and validate in one command
-miko-manifest build --env dev --output-dir output --validate
-```
-
-### Display Configuration
-
-```bash
-miko-manifest config --env dev
-```
-
-Display configuration information for a specific environment with multiple viewing options:
-
-**Available Parameters:**
-
-- `--env`, `-e`: Environment configuration to use (required)
-- `--config`, `-c`: Configuration directory path (default: "config")
-- `--variables`: Show only variables in `var=value` format (one per line)
-- `--schemas`: Show list of all configured schemas
-- `--tree`: Show the hierarchy of included resources with detailed loading process
-- `--verbose`, `-v`: Show detailed processing information and loading steps
-
-**Examples:**
-
-```bash
-# Show complete unified configuration
-miko-manifest config --env dev
-
-# Show only variables (useful for scripts)
-miko-manifest config --env dev --variables
-
-# Show configured schemas
-miko-manifest config --env dev --schemas
-
-# Show hierarchical resource loading tree
-miko-manifest config --env dev --tree
-
-# Show verbose information during configuration loading
-miko-manifest config --env dev --tree --verbose
-
-# Show verbose information when displaying schemas
-miko-manifest config --env dev --schemas --verbose
-```
-
-### Validate Configuration Files
-
-```bash
-miko-manifest check
-```
-
-Validates configuration YAML files before generating manifests. This command checks:
-
-- YAML syntax in configuration files
-- Configuration structure and required fields
-- Variable definitions and references
-
-**Options:**
-
-- `--config`, `-c`: Configuration directory path (default: "config")
-- `--verbose`, `-v`: Show detailed processing information
-
-Use this command to catch configuration errors early in your workflow.
-
-### Validate Generated Manifests
-
+Validate generated manifests:
 ```bash
 miko-manifest validate --dir output
 ```
 
-Validates generated Kubernetes manifest files to ensure they are deployable. This command performs:
-
-1. **YAML Validation**: Using native Go YAML parser
-2. **Kubernetes Validation**: Schema validation for Kubernetes manifests
-3. **Custom Resource Validation**: Using schemas from environment configuration
-
-**Options:**
-
-- `--dir`, `-d`: Directory containing generated manifests to validate
-- `--env`, `-e`: Environment configuration to use for schema loading
-- `--config`, `-c`: Configuration directory path (default: "config")
-- `--skip-schema-validation`: Skip custom resource schema validation
-
-**Auto-Environment Detection:**
-
-If you've previously built the project, the validate command automatically detects the environment:
-
+Inspect effective configuration (recommended before first build):
 ```bash
-# After building with --env dev
-miko-manifest build --env dev --output-dir output
-
-# Validate automatically detects dev environment and loads schemas
-miko-manifest validate output
+miko-manifest config --env dev --tree --verbose
 ```
 
-**Manual Environment Specification:**
+For comprehensive flags and advanced scenarios consult: [DOCS.md](DOCS.md)
+
+### 3. Core Concepts (Essentials Only)
+
+| Concept | Summary |
+|---------|---------|
+| Hierarchical Resources | `resources:` lists files or directories. They are merged in order. Later variables override earlier ones. Includes and schema lists are concatenated (deduplicated logically). |
+| Templates | Standard Go templates located under `templates/`. Supports: plain render, same-file repetition (multiple YAML docs), multi-file repetition (one output per list item). |
+| Variables | Declared in config YAML (`variables:` as name/value pairs) or overridden with `--var key=value` at build time. Unified into a final map fed to templates. |
+| Includes | `include:` drives which template(s) render and how (optionally with `repeat` + `list`). |
+| Schemas | Optional `schemas:` entries (local file, directory, or URL). Used to validate generated manifests (including CRDs). |
+| Output Modes | Standard (concise) vs `--verbose` (steps + context). Consistent across commands. |
+
+### 4. Typical Workflow
 
 ```bash
-# Explicitly specify environment
-miko-manifest validate --env dev --dir output
+# (Optional) Understand configuration and inheritance
+miko-manifest config --env dev --tree
 
-# Skip schema validation for faster validation
-miko-manifest validate --skip-schema-validation --dir output
-```
-
-### Output Modes
-
-All commands (`check`, `build`, `validate`) support two output modes to suit different use cases:
-
-**Standard Mode** (default):
-
-- Shows only essential results and file validation status
-- Clean, parseable output suitable for automation and CI/CD
-- Displays warnings, errors, and summary information
-
-```bash
-# Standard output example
+# Lint configuration inputs early
 miko-manifest check
-WARNING: config/schemas.yaml - Null value for key 'schemas'
-SUMMARY: 2 file(s) validated successfully, 0 error(s)
-SUMMARY: All YAML configuration files are valid
-```
 
-**Verbose Mode** (with `--verbose` flag):
-
-- Shows detailed processing steps and informational messages
-- Ideal for debugging, learning, and understanding what the tool is doing
-- Includes all standard output plus step-by-step process information
-
-```bash
-# Verbose output example
-miko-manifest check --verbose
-INFO: Using config directory: config
-STEP: Checking YAML files in directory: config
-STEP: Linting YAML files in config using native Go YAML parser
-WARNING: config/schemas.yaml - Null value for key 'schemas'
-SUMMARY: 2 file(s) validated successfully, 0 error(s)
-SUMMARY: All YAML configuration files are valid
-```
-
-Use `--verbose` for troubleshooting or when you want to understand the internal process.
-
-**Integrated Schema Validation:**
-
-Schemas are now defined directly in your environment configuration files:
-
-```yaml
-# config/dev.yaml
-resources:
-  - base.yaml
-
-schemas:
-  # Load from URL (e.g., Crossplane)
-  - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
-  # Load from local file
-  - ./schemas/my-operator-crd.yaml
-  # Load from directory (recursive)
-  - ./schemas/operators/
-
-variables:
-  - name: environment
-    value: development
-```
-
-## Command Reference
-
-### Build Command Options
-
-```bash
-miko-manifest build [flags]
-```
-
-**Flags:**
-
-- `--env`, `-e`: Environment configuration to use (required)
-- `--output-dir`, `-o`: Output directory for generated files (required)
-- `--config`, `-c`: Configuration directory path (default: "config")
-- `--templates`, `-t`: Templates directory path (default: "templates")
-- `--var`: Override variables (format: `--var NAME=VALUE`)
-- `--validate`: Perform validation after build (equivalent to build + validate)
-- `--verbose`: Show detailed build and validation information
-- `--debug-config`: Show the final merged configuration
-- `--show-config-tree`: Show the hierarchy of included resources
-
-### Validate Command Options
-
-```bash
-miko-manifest validate [directory] [flags]
-```
-
-**Flags:**
-
-- `--dir`, `-d`: Directory to validate (can also be specified as positional argument)
-- `--env`, `-e`: Environment to load schemas from (auto-detected if not specified)
-- `--config`, `-c`: Configuration directory path (default: "config")
-- `--skip-schema-validation`: Skip schema loading for faster YAML-only validation
-- `--verbose`: Show detailed validation information
-
-### Check Command Options
-
-```bash
-miko-manifest check [flags]
-```
-
-**Flags:**
-
-- `--config`, `-c`: Configuration directory path to validate (default: "config")
-- `--verbose`, `-v`: Show detailed processing information
-
-### Init Command Options
-
-```bash
-miko-manifest init [flags]
-```
-
-**Flags:**
-
-- `--project-dir`: Directory to initialize project in (default: current directory)
-
-## Template Processing Types
-
-### 1. Simple File Processing
-
-```yaml
-include:
-  - file: deployment.yaml
-```
-
-Template is processed once with global variables.
-
-### 2. Same-File Repeat
-
-```yaml
-include:
-  - file: configmap.yaml
-    repeat: same-file
-    list:
-      - key: database-config
-        values:
-          - name: config_name
-            value: database-config
-          - name: database_url
-            value: postgresql://localhost:5432/mydb
-      - key: cache-config
-        values:
-          - name: config_name
-            value: cache-config
-          - name: database_url
-            value: redis://localhost:6379
-```
-
-Generates multiple sections in a single file separated by `---`.
-
-### 3. Multiple-Files Repeat
-
-```yaml
-include:
-  - file: service.yaml
-    repeat: multiple-files
-    list:
-      - key: frontend
-        values:
-          - name: service_name
-            value: frontend-service
-          - name: service_port
-            value: "80"
-      - key: backend
-        values:
-          - name: service_name
-            value: backend-service
-          - name: service_port
-            value: "3000"
-```
-
-Generates separate files: `service-frontend.yaml`, `service-backend.yaml`.
-
-## Configuration Structure
-
-### Hierarchical Configuration
-
-Miko-Manifest supports hierarchical configuration through the `resources` section, allowing you to create modular, reusable configurations.
-
-#### Basic Structure
-
-```yaml
-# config/dev.yaml
-resources:
-  - base.yaml # Include base configuration
-  - components/ # Include all YAML files from directory
-
-variables:
-  - name: environment
-    value: development
-
-include:
-  - file: deployment.yaml
-```
-
-#### Configuration Merging Rules
-
-1. **Load Order**: Resources are processed in the order they appear
-2. **Variable Precedence**: Later definitions override earlier ones
-3. **Include Combination**: All includes are merged (no duplicates)
-4. **Directory Processing**: Files in directories are loaded alphabetically
-
-#### Example: Environment Inheritance
-
-**Base Configuration (`config/base.yaml`)**:
-
-```yaml
-variables:
-  - name: app_name
-    value: my-app
-  - name: replicas
-    value: "1"
-  - name: image
-    value: nginx
-
-include:
-  - file: deployment.yaml
-  - file: service.yaml
-```
-
-**Component Configuration (`config/components/database.yaml`)**:
-
-```yaml
-variables:
-  - name: database_host
-    value: localhost
-  - name: database_port
-    value: "5432"
-
-include:
-  - file: configmap.yaml
-    repeat: same-file
-    list:
-      - key: database-config
-        values:
-          - name: config_name
-            value: database-config
-```
-
-**Development Configuration (`config/dev.yaml`)**:
-
-```yaml
-resources:
-  - base.yaml
-  - components/
-
-schemas:
-  # CRD schemas for validation
-  - ./schemas/my-operator-crd.yaml
-  - https://raw.githubusercontent.com/example/operator/main/crd.yaml
-
-variables:
-  - name: replicas
-    value: "1" # Override for development
-  - name: environment
-    value: development
-
-include:
-  - file: service.yaml # Additional service for dev
-    repeat: multiple-files
-    list:
-      - key: debug
-        values:
-          - name: service_name
-            value: debug-service
-```
-
-**Result**: The final configuration combines all variables and includes, with development-specific overrides taking precedence.
-
-#### Debugging Configuration
-
-Use debug flags to understand configuration merging:
-
-```bash
-# Show configuration hierarchy
-miko-manifest build --env dev --output-dir output --show-config-tree
-
-# Show final merged configuration
-miko-manifest build --env dev --output-dir output --debug-config
-```
-
-#### Safety Features
-
-- **Circular Dependency Detection**: Prevents infinite loops
-- **Maximum Depth Limit**: Configurable recursion depth (default: 5)
-- **Path Resolution**: Relative paths are resolved correctly
-- **Clear Error Messages**: Descriptive errors for configuration issues
-
-### Schema Integration Features
-
-Miko-Manifest now supports integrated schema validation directly within configuration files:
-
-#### Schema Definition in Configuration
-
-Define schemas alongside your environment configuration:
-
-```yaml
-# config/dev.yaml
-resources:
-  - base.yaml
-
-schemas:
-  # Remote CRD from operator
-  - https://raw.githubusercontent.com/crossplane/crossplane/master/cluster/crds/apiextensions.crossplane.io_compositions.yaml
-  # Local CRD file
-  - ./schemas/database-operator-crd.yaml
-  # Directory of CRDs (recursive)
-  - ./schemas/operators/
-
-variables:
-  - name: environment
-    value: development
-```
-
-#### Schema Merging and Inheritance
-
-Schemas follow the same hierarchical merging rules as other configuration:
-
-```yaml
-# config/base.yaml
-schemas:
-  - https://raw.githubusercontent.com/kubernetes/api/master/core/v1/configmap.yaml
-
-# config/dev.yaml
-resources:
-  - base.yaml
-
-schemas:
-  - ./schemas/dev-specific-crds/ # Adds to base schemas, no duplicates
-```
-
-#### Auto-Detection Workflow
-
-1. **Build Phase**: Environment information is saved to `.miko-manifest-env`
-2. **Validate Phase**: Automatically detects environment and loads corresponding schemas
-3. **Seamless Validation**: No need to specify schemas separately for validation
-
-```bash
-# Step 1: Build saves environment info
+# Generate manifests
 miko-manifest build --env dev --output-dir output
 
-# Step 2: Validate auto-detects 'dev' and loads schemas from config/dev.yaml
-miko-manifest validate output
+# Validate output (YAML + Kubernetes + custom schemas)
+miko-manifest validate --dir output
 ```
 
-#### Performance Options
+### 5. Minimal Example
 
-- `--skip-schema-validation`: Skip schema loading for faster YAML-only validation
-- Auto-caching of remote schemas for improved performance
-- Efficient schema deduplication in hierarchical configurations
-
-### Environment Configuration (`config/dev.yaml`)
-
+`config/dev.yaml`:
 ```yaml
 variables:
   - name: app_name
-    value: my-app
-  - name: namespace
-    value: default
-  - name: replicas
-    value: "3"
-
+    value: demo
 include:
   - file: deployment.yaml
-  - file: configmap.yaml
-    repeat: same-file
-    list:
-      - key: database-config
-        values:
-          - name: config_name
-            value: database-config
-  - file: service.yaml
-    repeat: multiple-files
-    list:
-      - key: frontend
-        values:
-          - name: service_name
-            value: frontend-service
 ```
 
-### Template Example (`templates/deployment.yaml`)
-
+`templates/deployment.yaml` (fragment):
 ```yaml
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "{{.app_name}}"
-  namespace: "{{.namespace}}"
+  name: {{ .app_name }}
 spec:
-  replicas: { { .replicas } }
-  selector:
-    matchLabels:
-      app: "{{.app_name}}"
+  replicas: 1
   template:
-    metadata:
-      labels:
-        app: "{{.app_name}}"
     spec:
       containers:
-        - name: "{{.app_name}}"
-          image: "{{.image}}:{{.tag}}"
-          ports:
-            - containerPort: { { .port } }
+        - name: {{ .app_name }}
+          image: nginx:latest
 ```
 
-## Docker Usage
-
-### Using Pre-built Image
-
-```bash
-# Check configuration
-docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest check --config /workspace/config
-
-# Build manifests
-docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest build \
-  --env dev \
-  --output-dir /workspace/output \
-  --config /workspace/config \
-  --templates /workspace/templates
-
-# Validate generated files
-docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest validate --dir /workspace/output
-```
-
-### CI/CD Pipeline Examples
-
-**GitHub Actions:**
-
-```yaml
-name: Miko-Manifest Build
-on: [push, pull_request]
-
-env:
-  MIKO_IMAGE: jepemo/miko-manifest:latest
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Validate configuration
-        run: docker run --rm -v "${{ github.workspace }}:/workspace" $MIKO_IMAGE check --config /workspace/config
-
-      - name: Generate manifests
-        run: |
-          docker run --rm \
-            -v "${{ github.workspace }}:/workspace" \
-            $MIKO_IMAGE build \
-            --env dev \
-            --output-dir /workspace/output \
-            --config /workspace/config \
-            --templates /workspace/templates
-
-      - name: Validate generated manifests
-        run: docker run --rm -v "${{ github.workspace }}:/workspace" $MIKO_IMAGE validate --dir /workspace/output
-```
-
-**GitLab CI:**
-
-```yaml
-stages:
-  - validate
-  - build
-  - verify
-
-validate-config:
-  stage: validate
-  image: jepemo/miko-manifest:latest
-  script:
-    - miko-manifest check --config config/
-
-generate-manifests:
-  stage: build
-  image: jepemo/miko-manifest:latest
-  script:
-    - miko-manifest build --env ${ENVIRONMENT:-dev} --output-dir output/ --config config/ --templates templates/
-  artifacts:
-    paths:
-      - output/
-    expire_in: 1 week
-
-verify-manifests:
-  stage: verify
-  image: jepemo/miko-manifest:latest
-  script:
-    - miko-manifest validate --dir output/
-```
-
-## Library Usage
-
-Miko-Manifest is designed with a library-first approach. You can use it programmatically:
-
-```go
-package main
-
-import (
-    "github.com/jepemo/miko-manifest/pkg/mikomanifest"
-)
-
-func main() {
-    // Initialize a project
-    initOptions := mikomanifest.InitOptions{
-        ProjectDir: "/path/to/project",
-    }
-    mikomanifest.InitProject(initOptions)
-
-    // Build project
-    buildOptions := mikomanifest.BuildOptions{
-        Environment:   "dev",
-        OutputDir:     "output",
-        ConfigDir:     "config",
-        TemplatesDir:  "templates",
-        Variables:     map[string]string{"app_name": "my-app"},
-    }
-
-    mikoManifest := mikomanifest.New(buildOptions)
-    mikoManifest.Build()
-
-    // Lint directory
-    lintOptions := mikomanifest.LintOptions{
-        Directory: "output",
-    }
-    mikomanifest.LintDirectory(lintOptions)
-}
-```
-
-## Development
-
-### Build from Source
-
-```bash
-# Clone repository
-git clone https://github.com/jepemo/miko-manifest.git
-cd miko-manifest
-
-# Build
-go build -o miko-manifest .
-
-# Run
-./miko-manifest --help
-```
-
-### Run Tests
-
-```bash
-go test ./...
-```
-
-### Build Docker Image
-
-```bash
-docker build -f Dockerfile.go -t miko-manifest:latest .
-```
-
-## Migration from Konfig
-
-If you're migrating from the Python version (Konfig), the command structure is very similar:
-
-**Python (Konfig):**
-
-```bash
-uv run konfig build --env dev --output-dir output
-```
-
-**Go (Miko-Manifest):**
-
+Build:
 ```bash
 miko-manifest build --env dev --output-dir output
 ```
+Result: `output/deployment.yaml`
 
-## Dependencies
+### 6. Command Overview (Condensed)
 
-- **CLI Framework**: [cobra](https://github.com/spf13/cobra)
-- **YAML Processing**: [gopkg.in/yaml.v3](https://gopkg.in/yaml.v3)
-- **Kubernetes Validation**: [k8s.io/client-go](https://github.com/kubernetes/client-go)
+| Command | Purpose | Typical Additions |
+|---------|---------|-------------------|
+| `init` | Scaffold directories and example templates | – |
+| `config` | Inspect merged configuration / schemas / tree / variables | `--tree`, `--schemas`, `--variables`, `--verbose` |
+| `check` | Validate configuration YAML before build | `--verbose` |
+| `build` | Render templates into manifest files | `--var`, `--validate`, `--verbose` |
+| `validate` | Validate generated manifests (YAML + schemas) | `--env`, `--skip-schema-validation`, `--verbose` |
 
-## Contributing
+Complete flag descriptions: see [DOCS.md](DOCS.md).
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+### 7. Advanced Highlights
 
-## License
+| Topic | Detail |
+|-------|--------|
+| Deterministic Order | Directories processed alphabetically; merging order = declaration order. |
+| Override Strategy | Variable last-write-wins; template includes accumulate; schemas aggregated (duplicates ignored). |
+| Safety | Circular resource inclusion detection + maximum depth guard. |
+| Auto Environment | `build` records environment; `validate` reuses it if `--env` omitted. |
+| Schema Sources | Local file, directory (recursive), or remote URL (fetched once per run). |
 
-MIT License
+### 8. Programmatic Use
+
+```go
+import "github.com/jepemo/miko-manifest/pkg/mikomanifest"
+
+opts := mikomanifest.BuildOptions{
+    Environment:  "dev",
+    OutputDir:    "output",
+    ConfigDir:    "config",
+    TemplatesDir: "templates",
+    Variables:    map[string]string{"app_name": "demo"},
+}
+mm := mikomanifest.New(opts)
+if err := mm.Build(); err != nil { /* handle */ }
+```
+
+More constructors, linting, and validation helpers are listed in [DOCS.md](DOCS.md).
+
+### 9. Docker & CI
+
+Run without local toolchain:
+```bash
+docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest check --config /workspace/config
+```
+Typical pipeline: check -> build -> validate. Minimal GitHub Actions and GitLab CI templates are provided in the documentation.
+
+### 10. Migration (Konfig → Miko-Manifest)
+
+Python (historical): `konfig build --env dev --output-dir output`
+
+Go (current): `miko-manifest build --env dev --output-dir output`
+
+Concepts map directly; flags have been rationalised. See [DOCS.md](DOCS.md) for any edge differences.
+
+### 11. Contributing
+
+Contributions are welcome. Please open an issue to propose significant changes before submitting a pull request. Ensure tests cover new behaviour and run `go test ./...` locally.
+
+### 12. License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+Further detail (all flags, schema handling, repetition patterns, error modes): [DOCS.md](DOCS.md)
