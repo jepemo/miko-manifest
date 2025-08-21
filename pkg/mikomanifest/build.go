@@ -7,6 +7,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/jepemo/miko-manifest/pkg/output"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,6 +47,7 @@ type BuildOptions struct {
 	ConfigDir       string
 	TemplatesDir    string
 	Variables       map[string]string
+	OutputOpts      *output.OutputOptions
 }
 
 // MikoManifest is the main library interface
@@ -223,7 +225,7 @@ func (m *MikoManifest) RenderTemplate(templateContent string, variables map[stri
 }
 
 // ProcessSimpleFile processes a simple file
-func (m *MikoManifest) ProcessSimpleFile(templatePath, outputDir string, variables map[string]string) error {
+func (m *MikoManifest) ProcessSimpleFile(templatePath, outputDir string, variables map[string]string, outputOpts *output.OutputOptions) error {
 	content, err := os.ReadFile(templatePath)
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", templatePath, err)
@@ -244,12 +246,12 @@ func (m *MikoManifest) ProcessSimpleFile(templatePath, outputDir string, variabl
 		return fmt.Errorf("failed to write output file %s: %w", outputFile, err)
 	}
 	
-	fmt.Printf("✓ Processed: %s -> %s\n", filepath.Base(templatePath), outputFile)
+	outputOpts.PrintProcessed(filepath.Base(templatePath), filepath.Base(outputFile), "")
 	return nil
 }
 
 // ProcessSameFileRepeat processes a file with same-file repeat pattern
-func (m *MikoManifest) ProcessSameFileRepeat(templatePath, outputDir string, globalVars map[string]string, listItems []ListItem) error {
+func (m *MikoManifest) ProcessSameFileRepeat(templatePath, outputDir string, globalVars map[string]string, listItems []ListItem, outputOpts *output.OutputOptions) error {
 	content, err := os.ReadFile(templatePath)
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", templatePath, err)
@@ -289,12 +291,12 @@ func (m *MikoManifest) ProcessSameFileRepeat(templatePath, outputDir string, glo
 		return fmt.Errorf("failed to write output file %s: %w", outputFile, err)
 	}
 	
-	fmt.Printf("✓ Processed (same-file): %s -> %s (%d sections)\n", filepath.Base(templatePath), outputFile, len(listItems))
+	outputOpts.PrintProcessed(filepath.Base(templatePath), filepath.Base(outputFile), fmt.Sprintf("%d sections", len(listItems)))
 	return nil
 }
 
 // ProcessMultipleFilesRepeat processes a file with multiple-files repeat pattern
-func (m *MikoManifest) ProcessMultipleFilesRepeat(templatePath, outputDir string, globalVars map[string]string, listItems []ListItem) error {
+func (m *MikoManifest) ProcessMultipleFilesRepeat(templatePath, outputDir string, globalVars map[string]string, listItems []ListItem, outputOpts *output.OutputOptions) error {
 	content, err := os.ReadFile(templatePath)
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", templatePath, err)
@@ -331,7 +333,7 @@ func (m *MikoManifest) ProcessMultipleFilesRepeat(templatePath, outputDir string
 			return fmt.Errorf("failed to write output file %s: %w", outputFile, err)
 		}
 		
-		fmt.Printf("✓ Processed (multi-file): %s -> %s\n", filename, outputFile)
+		outputOpts.PrintProcessed(filename, outputFilename, "multi-file")
 	}
 	
 	return nil
@@ -339,9 +341,17 @@ func (m *MikoManifest) ProcessMultipleFilesRepeat(templatePath, outputDir string
 
 // Build builds the manifest project
 func (m *MikoManifest) Build() error {
-	fmt.Printf("Building miko-manifest project with environment: %s\n", m.options.Environment)
-	fmt.Printf("✓ Using config directory: %s\n", m.options.ConfigDir)
-	fmt.Printf("✓ Using templates directory: %s\n", m.options.TemplatesDir)
+	// Create a default output options if not provided
+	var outputOpts *output.OutputOptions
+	if m.options.OutputOpts != nil {
+		outputOpts = m.options.OutputOpts
+	} else {
+		outputOpts = &output.OutputOptions{Verbose: false}
+	}
+
+	outputOpts.PrintStep(fmt.Sprintf("Building miko-manifest project with environment: %s", m.options.Environment))
+	outputOpts.PrintInfo(fmt.Sprintf("Using config directory: %s", m.options.ConfigDir))
+	outputOpts.PrintInfo(fmt.Sprintf("Using templates directory: %s", m.options.TemplatesDir))
 	
 	// Validate directories
 	if err := m.validateDirectories(); err != nil {
@@ -367,7 +377,7 @@ func (m *MikoManifest) Build() error {
 	if err := os.MkdirAll(m.options.OutputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory %s: %w", m.options.OutputDir, err)
 	}
-	fmt.Printf("✓ Output directory: %s\n", m.options.OutputDir)
+	outputOpts.PrintInfo(fmt.Sprintf("Output directory: %s", m.options.OutputDir))
 	
 	// Get global variables and merge with command line overrides
 	globalVariables := m.MergeVariables(config.Variables, nil, m.options.Variables)
@@ -379,17 +389,17 @@ func (m *MikoManifest) Build() error {
 		switch include.Repeat {
 		case "":
 			// Simple file include
-			if err := m.ProcessSimpleFile(templatePath, m.options.OutputDir, globalVariables); err != nil {
+			if err := m.ProcessSimpleFile(templatePath, m.options.OutputDir, globalVariables, outputOpts); err != nil {
 				return err
 			}
 		case "same-file":
 			// Same-file repeat
-			if err := m.ProcessSameFileRepeat(templatePath, m.options.OutputDir, globalVariables, include.List); err != nil {
+			if err := m.ProcessSameFileRepeat(templatePath, m.options.OutputDir, globalVariables, include.List, outputOpts); err != nil {
 				return err
 			}
 		case "multiple-files":
 			// Multiple-files repeat
-			if err := m.ProcessMultipleFilesRepeat(templatePath, m.options.OutputDir, globalVariables, include.List); err != nil {
+			if err := m.ProcessMultipleFilesRepeat(templatePath, m.options.OutputDir, globalVariables, include.List, outputOpts); err != nil {
 				return err
 			}
 		default:
@@ -399,10 +409,10 @@ func (m *MikoManifest) Build() error {
 	
 	// Save environment info for auto-detection during lint
 	if err := m.saveEnvironmentInfo(); err != nil {
-		fmt.Printf("Warning: Failed to save environment info: %v\n", err)
+		outputOpts.PrintWarning("environment-info", fmt.Sprintf("Failed to save environment info: %v", err))
 	}
 	
-	fmt.Println("SUCCESS: Build completed successfully!")
+	outputOpts.PrintSummary("Build completed successfully!")
 	return nil
 }
 

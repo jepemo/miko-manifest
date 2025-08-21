@@ -59,6 +59,7 @@ Related commands:
 			ConfigDir:       buildConfigDir,
 			TemplatesDir:    buildTemplatesDir,
 			Variables:       cmdVariables,
+			OutputOpts:      outputOpts,
 		}
 		
 		mikoManifest := mikomanifest.New(options)

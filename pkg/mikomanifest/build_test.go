@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	
+	"github.com/jepemo/miko-manifest/pkg/output"
 )
 
 func TestBuildOptions_Validate(t *testing.T) {
@@ -134,8 +136,11 @@ replicas: {{.replicas}}`
 	
 	m := New(BuildOptions{})
 	
+	// Create output options for testing
+	outputOpts := &output.OutputOptions{Verbose: false}
+	
 	// Process the template
-	err = m.ProcessSimpleFile(templatePath, outputDir, variables)
+	err = m.ProcessSimpleFile(templatePath, outputDir, variables, outputOpts)
 	if err != nil {
 		t.Fatalf("Expected no error, got: %v", err)
 	}
