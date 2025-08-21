@@ -3,7 +3,6 @@ package mikomanifest
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -289,7 +288,7 @@ func validateYAMLStructureWithOutput(parsed interface{}, fileName string, docInd
 }
 
 func lintSingleYAMLFileWithOutput(fileName string, outputOpts *output.OutputOptions) bool {
-	content, err := ioutil.ReadFile(fileName)
+	content, err := os.ReadFile(fileName)
 	if err != nil {
 		outputOpts.PrintError(fileName, fmt.Sprintf("Error reading file: %v", err))
 		return false
