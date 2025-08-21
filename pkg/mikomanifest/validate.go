@@ -21,9 +21,7 @@ type LintOptions struct {
 
 // CheckOptions contains options for checking
 type CheckOptions struct {
-	ConfigDir            string
-	Environment          string
-	SkipSchemaValidation bool
+	ConfigDir string
 }
 
 // LintDirectory runs native Go YAML linting and kubernetes validation on a directory
@@ -92,7 +90,7 @@ func LintDirectory(options LintOptions) error {
 // CheckConfigDirectory runs native Go YAML linting only on config directory
 func CheckConfigDirectory(options CheckOptions) error {
 	fmt.Printf("✓ Using config directory: %s\n", options.ConfigDir)
-	fmt.Printf("Linting YAML files in directory: %s\n", options.ConfigDir)
+	fmt.Printf("Checking YAML files in directory: %s\n", options.ConfigDir)
 	
 	// Check if directory exists
 	if stat, err := os.Stat(options.ConfigDir); err != nil {
@@ -104,28 +102,13 @@ func CheckConfigDirectory(options CheckOptions) error {
 		return fmt.Errorf("%s is not a directory", options.ConfigDir)
 	}
 
-	// Load custom schemas if provided (for config validation)
-	var schemaRegistry *SchemaRegistry
-	if !options.SkipSchemaValidation {
-		if options.Environment != "" {
-			// Load schemas from environment configuration
-			var err error
-			schemaRegistry, err = loadSchemasFromEnvironment(options.Environment, options.ConfigDir)
-			if err != nil {
-				fmt.Printf("Warning: Failed to load schemas from environment config: %v\n", err)
-			} else if schemaRegistry != nil {
-				fmt.Printf("✓ Loaded schemas from environment: %s\n", options.Environment)
-			}
-		}
-	}
-	
 	success := lintYAMLFiles(options.ConfigDir)
 	
 	if success {
-		fmt.Println("SUCCESS: All YAML files passed linting!")
+		fmt.Println("SUCCESS: All YAML configuration files are valid!")
 	} else {
-		fmt.Println("FAILED: YAML linting failed!")
-		return fmt.Errorf("yaml linting failed")
+		fmt.Println("FAILED: YAML configuration validation failed!")
+		return fmt.Errorf("yaml configuration validation failed")
 	}
 	
 	return nil

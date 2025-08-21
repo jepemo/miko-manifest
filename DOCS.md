@@ -85,7 +85,7 @@ miko-manifest init
 tail -n +1 config/*.yaml
 
 # 3. Validate configuration (input stage)
-miko-manifest check --env dev
+miko-manifest check
 
 # 4. Build manifests
 miko-manifest build --env dev --output-dir output
@@ -143,14 +143,15 @@ miko-manifest config --env prod --variables
 Validates _configuration_ YAML prior to generation.
 
 ```bash
-miko-manifest check --env dev
+miko-manifest check
 ```
 
 Performs:
 
 - YAML syntax validation
 - Structural config validation
-- Optional CRD schema validation (if schemas defined) — can be skipped via `--skip-schema-validation`
+- Variable definitions and references verification
+- Variable definitions and references verification
 
 ### 4.4 `build`
 
@@ -419,7 +420,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate config
-        run: miko-manifest check --env dev
+        run: miko-manifest check
       - name: Build
         run: miko-manifest build --env dev --output-dir output --validate
 ```
@@ -432,7 +433,7 @@ stages: [validate, build, verify]
 validate-config:
   stage: validate
   image: jepemo/miko-manifest:latest
-  script: miko-manifest check --env dev
+  script: miko-manifest check
 
 generate:
   stage: build
@@ -515,10 +516,14 @@ schemas:
 ### 9.5 Selective Validation (Fast Feedback)
 
 ```bash
-miko-manifest check --env dev --skip-schema-validation
+miko-manifest check
 ```
 
-Then do a full run before merging.
+Then do a full manifest validation before merging:
+
+```bash
+miko-manifest validate --dir output --env dev
+```
 
 ---
 
@@ -580,7 +585,7 @@ A: Use the Go library, wrap `New()` and supply your own template.FuncMap before 
 A: Remote fetch strategy is implementation-dependent; plan for network access on first validation run.
 
 **Q: Can I skip output validation in CI?**  
-A: Not recommended, but you can omit the `validate` step or use `--skip-schema-validation` for speed.
+A: Not recommended, but you can omit the `validate` step or use `--skip-schema-validation` flag on the `validate` command for speed.
 
 ---
 

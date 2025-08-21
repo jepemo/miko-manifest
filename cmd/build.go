@@ -28,7 +28,7 @@ Use --validate flag to automatically validate generated manifests after build.
 
 Typical workflow:
   1. miko-manifest config --env <environment>     # Inspect configuration
-  2. miko-manifest check --env <environment>      # Validate configuration  
+  2. miko-manifest check                          # Validate configuration  
   3. miko-manifest build --env <environment>      # Generate manifests
   4. miko-manifest validate --dir <output-dir>    # Validate generated manifests
 
