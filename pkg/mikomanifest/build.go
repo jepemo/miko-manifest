@@ -276,7 +276,8 @@ func (m *MikoManifest) ProcessSameFileRepeat(templatePath, outputDir string, glo
 	}
 	
 	// Join all parts with separator
-	finalContent := strings.Join(renderedParts, "\n---\n")
+	// Since each rendered part starts with "---", we only need a newline separator
+	finalContent := strings.Join(renderedParts, "\n")
 	
 	// Ensure content ends with newline
 	if !strings.HasSuffix(finalContent, "\n") {

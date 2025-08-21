@@ -102,8 +102,16 @@ func LintDirectory(options LintOptions) error {
 
 // CheckConfigDirectory runs native Go YAML linting only on config directory
 func CheckConfigDirectory(options CheckOptions) error {
-	options.OutputOpts.PrintInfo(fmt.Sprintf("Using config directory: %s", options.ConfigDir))
-	options.OutputOpts.PrintStep(fmt.Sprintf("Checking YAML files in directory: %s", options.ConfigDir))
+	// Create a default output options if not provided
+	var outputOpts *output.OutputOptions
+	if options.OutputOpts != nil {
+		outputOpts = options.OutputOpts
+	} else {
+		outputOpts = &output.OutputOptions{Verbose: false}
+	}
+
+	outputOpts.PrintInfo(fmt.Sprintf("Using config directory: %s", options.ConfigDir))
+	outputOpts.PrintStep(fmt.Sprintf("Checking YAML files in directory: %s", options.ConfigDir))
 	
 	// Check if directory exists
 	if stat, err := os.Stat(options.ConfigDir); err != nil {
@@ -115,12 +123,12 @@ func CheckConfigDirectory(options CheckOptions) error {
 		return fmt.Errorf("%s is not a directory", options.ConfigDir)
 	}
 
-	success := lintYAMLFilesWithOutput(options.ConfigDir, options.OutputOpts)
+	success := lintYAMLFilesWithOutput(options.ConfigDir, outputOpts)
 	
 	if success {
-		options.OutputOpts.PrintSummary("All YAML configuration files are valid")
+		outputOpts.PrintSummary("All YAML configuration files are valid")
 	} else {
-		options.OutputOpts.PrintSummary("YAML configuration validation failed")
+		outputOpts.PrintSummary("YAML configuration validation failed")
 		return fmt.Errorf("yaml configuration validation failed")
 	}
 	
