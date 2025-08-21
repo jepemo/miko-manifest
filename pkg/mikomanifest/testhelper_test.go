@@ -328,6 +328,9 @@ func (h *TestHelper) ValidateKubernetesManifest(content string) error {
 func (h *TestHelper) CleanupTestFiles() {
 	// t.TempDir() automatically cleans up, but this can be used for manual cleanup
 	if h.tempDir != "" {
-		os.RemoveAll(h.tempDir)
+		if err := os.RemoveAll(h.tempDir); err != nil {
+			// In test cleanup, just log the error - don't fail the test
+			fmt.Printf("Warning: failed to remove temp dir %s: %v\n", h.tempDir, err)
+		}
 	}
 }

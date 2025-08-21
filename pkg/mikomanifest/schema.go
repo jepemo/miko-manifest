@@ -110,7 +110,12 @@ func (sr *SchemaRegistry) loadFromURL(url string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to download from %s: %w", url, err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Log the error but don't override the main error
+			fmt.Printf("Warning: failed to close response body: %v\n", closeErr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return 0, fmt.Errorf("HTTP %d when downloading from %s", resp.StatusCode, url)

@@ -223,7 +223,11 @@ func TestLintDirectoryWithFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
+	defer func() {
+		if removeErr := os.Remove(tempFile.Name()); removeErr != nil {
+			t.Logf("Warning: failed to remove temp file: %v", removeErr)
+		}
+	}()
 	
 	// Test with file instead of directory
 	options := LintOptions{
