@@ -123,6 +123,7 @@ Display configuration information for a specific environment with multiple viewi
 - `--variables`: Show only variables in `var=value` format (one per line)
 - `--schemas`: Show list of all configured schemas
 - `--tree`: Show the hierarchy of included resources with detailed loading process
+- `--verbose`, `-v`: Show detailed processing information and loading steps
 
 **Examples:**
 
@@ -138,6 +139,12 @@ miko-manifest config --env dev --schemas
 
 # Show hierarchical resource loading tree
 miko-manifest config --env dev --tree
+
+# Show verbose information during configuration loading
+miko-manifest config --env dev --tree --verbose
+
+# Show verbose information when displaying schemas
+miko-manifest config --env dev --schemas --verbose
 ```
 
 ### Validate Configuration Files

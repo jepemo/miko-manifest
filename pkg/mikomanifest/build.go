@@ -65,17 +65,28 @@ func New(options BuildOptions) *MikoManifest {
 // LoadConfig loads configuration from ENV.yaml file with hierarchical resource support
 // This is a public function that can be used from external packages
 func LoadConfig(configDir, env string, showTree bool) (*Config, error) {
+	return LoadConfigWithOutput(configDir, env, showTree, nil)
+}
+
+// LoadConfigWithOutput loads configuration with output options support
+func LoadConfigWithOutput(configDir, env string, showTree bool, outputOpts *output.OutputOptions) (*Config, error) {
 	options := BuildOptions{
 		ConfigDir: configDir,
 	}
 	m := New(options)
-	config, err := m.loadConfigInternal(env, showTree)
+	config, err := m.loadConfigInternalWithOutput(env, showTree, outputOpts)
 	if err != nil {
 		return nil, err
 	}
 	config.Environment = env
 	config.ConfigDir = configDir
 	return config, nil
+}
+
+// loadConfigInternalWithOutput is the internal implementation with output options
+func (m *MikoManifest) loadConfigInternalWithOutput(env string, showTree bool, outputOpts *output.OutputOptions) (*Config, error) {
+	configPath := filepath.Join(m.options.ConfigDir, fmt.Sprintf("%s.yaml", env))
+	return m.LoadConfigWithResources(configPath, make([]string, 0), 0, showTree, outputOpts)
 }
 
 // loadConfigInternal loads configuration from ENV.yaml file with hierarchical resource support
@@ -86,11 +97,11 @@ func (m *MikoManifest) LoadConfig(env string) (*Config, error) {
 // loadConfigInternal is the internal implementation
 func (m *MikoManifest) loadConfigInternal(env string, showTree bool) (*Config, error) {
 	configPath := filepath.Join(m.options.ConfigDir, fmt.Sprintf("%s.yaml", env))
-	return m.LoadConfigWithResources(configPath, make([]string, 0), 0, showTree)
+	return m.LoadConfigWithResources(configPath, make([]string, 0), 0, showTree, nil)
 }
 
 // LoadConfigWithResources loads configuration with resource inclusion and circular dependency detection
-func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []string, depth int, showTree bool) (*Config, error) {
+func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []string, depth int, showTree bool, outputOpts *output.OutputOptions) (*Config, error) {
 	// Check for maximum recursion depth
 	const maxDepth = 5
 	if depth > maxDepth {
@@ -111,9 +122,8 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 		return nil, fmt.Errorf("configuration file %s not found", configPath)
 	}
 	
-	if showTree {
-		indent := strings.Repeat("  ", depth)
-		fmt.Printf("%s📄 Loading: %s\n", indent, configPath)
+	if showTree && outputOpts != nil {
+		outputOpts.PrintInfo(fmt.Sprintf("Loading: %s", configPath))
 	}
 	
 	data, err := os.ReadFile(configPath)
@@ -128,9 +138,8 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 	
 	// Process resources if they exist
 	if len(config.Resources) > 0 {
-		if showTree {
-			indent := strings.Repeat("  ", depth)
-			fmt.Printf("%s📁 Processing %d resource(s):\n", indent, len(config.Resources))
+		if showTree && outputOpts != nil {
+			outputOpts.PrintInfo(fmt.Sprintf("Processing %d resource(s):", len(config.Resources)))
 		}
 		
 		baseConfig := &Config{
@@ -142,23 +151,22 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 		for _, resource := range config.Resources {
 			resourcePath := m.resolveResourcePath(configPath, resource)
 			
-			if showTree {
-				indent := strings.Repeat("  ", depth+1)
+			if showTree && outputOpts != nil {
 				if isDirectory(resourcePath) {
-					fmt.Printf("%s📂 %s (directory)\n", indent, resource)
+					outputOpts.PrintInfo(fmt.Sprintf("Resource: %s (directory)", resource))
 				} else {
-					fmt.Printf("%s📄 %s\n", indent, resource)
+					outputOpts.PrintInfo(fmt.Sprintf("Resource: %s", resource))
 				}
 			}
 			
 			if isDirectory(resourcePath) {
 				// Load all YAML files from directory in alphabetical order
-				if err := m.loadConfigFromDirectory(resourcePath, baseConfig, currentChain, depth+1, showTree); err != nil {
+				if err := m.loadConfigFromDirectory(resourcePath, baseConfig, currentChain, depth+1, showTree, outputOpts); err != nil {
 					return nil, fmt.Errorf("failed to load from directory %s: %w", resourcePath, err)
 				}
 			} else {
 				// Load single file
-				resourceConfig, err := m.LoadConfigWithResources(resourcePath, currentChain, depth+1, showTree)
+				resourceConfig, err := m.LoadConfigWithResources(resourcePath, currentChain, depth+1, showTree, outputOpts)
 				if err != nil {
 					return nil, fmt.Errorf("failed to load resource %s: %w", resourcePath, err)
 				}
@@ -458,7 +466,7 @@ func isDirectory(path string) bool {
 }
 
 // loadConfigFromDirectory loads all YAML files from a directory and merges them
-func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Config, loadChain []string, depth int, showTree bool) error {
+func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Config, loadChain []string, depth int, showTree bool, outputOpts *output.OutputOptions) error {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {
 		return fmt.Errorf("failed to read directory %s: %w", dirPath, err)
@@ -479,7 +487,7 @@ func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Confi
 	
 	// Process files in alphabetical order (already sorted by ReadDir)
 	for _, yamlFile := range yamlFiles {
-		resourceConfig, err := m.LoadConfigWithResources(yamlFile, loadChain, depth, showTree)
+		resourceConfig, err := m.LoadConfigWithResources(yamlFile, loadChain, depth, showTree, outputOpts)
 		if err != nil {
 			return fmt.Errorf("failed to load file %s: %w", yamlFile, err)
 		}

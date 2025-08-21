@@ -202,11 +202,18 @@ Flags:
 - `--variables` – print only `key=value` pairs (automation friendly)
 - `--schemas` – list configured schema sources
 - `--tree` – show hierarchical resource inclusion order
+- `--verbose`, `-v` – show detailed processing information and loading steps
 
 Example (variables only):
 
 ```bash
 miko-manifest config --env prod --variables
+```
+
+Example (verbose tree display):
+
+```bash
+miko-manifest config --env dev --tree --verbose
 ```
 
 ### 5.3 `check`
