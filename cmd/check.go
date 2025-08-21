@@ -5,10 +5,12 @@ import (
 	"os"
 
 	"github.com/jepemo/miko-manifest/pkg/mikomanifest"
+	"github.com/jepemo/miko-manifest/pkg/output"
 	"github.com/spf13/cobra"
 )
 
 var checkConfigDir string
+var checkVerbose bool
 
 var checkCmd = &cobra.Command{
 	Use:   "check",
@@ -30,8 +32,10 @@ Related commands:
   - Use 'validate' to check generated Kubernetes manifests and schemas
   - Use 'config' to inspect configuration values`,
 	Run: func(cmd *cobra.Command, args []string) {
+		outputOpts := output.NewOutputOptions(checkVerbose)
 		options := mikomanifest.CheckOptions{
-			ConfigDir: checkConfigDir,
+			ConfigDir:    checkConfigDir,
+			OutputOpts:   outputOpts,
 		}
 		
 		if err := mikomanifest.CheckConfigDirectory(options); err != nil {
@@ -43,4 +47,5 @@ Related commands:
 
 func init() {
 	checkCmd.Flags().StringVarP(&checkConfigDir, "config", "c", "config", "Configuration directory path")
+	checkCmd.Flags().BoolVarP(&checkVerbose, "verbose", "v", false, "Show detailed processing information")
 }

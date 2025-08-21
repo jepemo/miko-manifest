@@ -102,9 +102,80 @@ miko-manifest build --env dev --output-dir output --validate
 
 ---
 
-## 4. Command Deep Dive
+## 4. Output System
 
-### 4.1 `init`
+Miko-manifest provides a dual-output system designed for both human-readable debugging and automation-friendly results.
+
+### 4.1 Standard Mode (Default)
+
+Shows only essential information:
+
+- File validation results (`VALID`, `WARNING`, `ERROR`)
+- Processing status (`PROCESSED`)
+- Summary information (`SUMMARY`)
+
+**Example:**
+
+```bash
+$ miko-manifest check
+WARNING: config/schemas.yaml - Null value for key 'schemas'
+SUMMARY: 2 file(s) validated successfully, 0 error(s)
+SUMMARY: All YAML configuration files are valid
+```
+
+**Use cases:**
+
+- CI/CD pipelines
+- Automated scripts
+- Production deployments
+- Clean, parseable output
+
+### 4.2 Verbose Mode (--verbose flag)
+
+Shows detailed process information plus all standard output:
+
+- Process steps (`INFO`, `STEP`, `DEBUG`)
+- Internal workflow information
+- Configuration loading details
+- All standard mode messages
+
+**Example:**
+
+```bash
+$ miko-manifest check --verbose
+INFO: Using config directory: config
+STEP: Checking YAML files in directory: config
+STEP: Linting YAML files in config using native Go YAML parser
+WARNING: config/schemas.yaml - Null value for key 'schemas'
+SUMMARY: 2 file(s) validated successfully, 0 error(s)
+SUMMARY: All YAML configuration files are valid
+```
+
+**Use cases:**
+
+- Debugging configuration issues
+- Understanding tool behavior
+- Learning workflow steps
+- Troubleshooting problems
+
+### 4.3 Message Categories
+
+| Prefix      | Mode     | Purpose               | Example                                                 |
+| ----------- | -------- | --------------------- | ------------------------------------------------------- |
+| `VALID`     | Standard | Successful validation | `VALID: deployment.yaml - Valid Deployment manifest`    |
+| `WARNING`   | Standard | Non-blocking issues   | `WARNING: config.yaml - Null value for key 'schemas'`   |
+| `ERROR`     | Standard | Blocking errors       | `ERROR: template.yaml - Invalid YAML syntax`            |
+| `PROCESSED` | Standard | File operations       | `PROCESSED: template.yaml -> output/deployment.yaml`    |
+| `SUMMARY`   | Standard | Final results         | `SUMMARY: 5 file(s) validated successfully, 0 error(s)` |
+| `INFO`      | Verbose  | Informational         | `INFO: Using config directory: config`                  |
+| `STEP`      | Verbose  | Process steps         | `STEP: Linting YAML files in config`                    |
+| `DEBUG`     | Verbose  | Debug details         | `DEBUG: Loading schema from file.json`                  |
+
+---
+
+## 5. Command Deep Dive
+
+### 5.1 `init`
 
 Scaffolds directories and example templates.
 
@@ -118,7 +189,7 @@ Creates (if absent):
 - `config/`
 - Example environment YAML & template files
 
-### 4.2 `config`
+### 5.2 `config`
 
 Inspect merged environment configuration.
 
@@ -138,7 +209,7 @@ Example (variables only):
 miko-manifest config --env prod --variables
 ```
 
-### 4.3 `check`
+### 5.3 `check`
 
 Validates _configuration_ YAML prior to generation.
 
@@ -151,9 +222,18 @@ Performs:
 - YAML syntax validation
 - Structural config validation
 - Variable definitions and references verification
-- Variable definitions and references verification
 
-### 4.4 `build`
+Flags:
+
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--verbose`, `-v`: Show detailed processing information
+
+**Output Modes:**
+
+- **Standard**: Shows only validation results and summary
+- **Verbose**: Shows step-by-step processing information
+
+### 5.4 `build`
 
 Generates manifests from templates + environment variables.
 
@@ -166,9 +246,10 @@ Useful flags:
 - `--var NAME=VALUE` (repeatable) – ad‑hoc overrides
 - `--templates` / `--config` – non-default layout
 - `--validate` – run post-build validation automatically
+- `--verbose` – show detailed build and validation information
 - `--debug-config` / `--show-config-tree` – introspection aids
 
-### 4.5 `validate`
+### 5.5 `validate`
 
 Validates _generated_ manifests (output stage):
 
@@ -182,13 +263,26 @@ Performs:
 2. Kubernetes resource schema validation
 3. Custom resource schema validation (from environment config if env detectable or provided)
 
+Flags:
+
+- `--dir`, `-d`: Directory to validate (can also be positional argument)
+- `--env`, `-e`: Environment to load schemas from (auto-detected if not specified)
+- `--config`, `-c`: Configuration directory path (default: "config")
+- `--skip-schema-validation`: Skip schema loading for faster YAML-only validation
+- `--verbose`: Show detailed validation information
+
+**Output Modes:**
+
+- **Standard**: Shows only validation results and file status
+- **Verbose**: Shows detailed validation steps and process information
+
 Auto environment detection: if the build wrote its marker file, you can simply:
 
 ```bash
 miko-manifest validate output
 ```
 
-### 4.6 Structured Workflow Summary
+### 5.6 Structured Workflow Summary
 
 | Stage             | Command  | Purpose                      | Typical Failure Sources       |
 | ----------------- | -------- | ---------------------------- | ----------------------------- |
@@ -199,9 +293,9 @@ miko-manifest validate output
 
 ---
 
-## 5. Configuration Model
+## 6. Configuration Model
 
-### 5.1 Environment File Anatomy
+### 6.1 Environment File Anatomy
 
 ```yaml
 # config/dev.yaml
@@ -238,7 +332,7 @@ schemas:
   - https://raw.githubusercontent.com/example/operator/main/crd.yaml
 ```
 
-### 5.2 Sections Explained
+### 6.2 Sections Explained
 
 | Section     | Purpose                                 | Notes                                               |
 | ----------- | --------------------------------------- | --------------------------------------------------- |
@@ -247,7 +341,7 @@ schemas:
 | `include`   | Templating instructions                 | Drives which templates render & repetition behavior |
 | `schemas`   | External CRDs for validation            | Local paths, directories, or URLs                   |
 
-### 5.3 Repetition Patterns
+### 6.3 Repetition Patterns
 
 1. **Simple File** — just `file: deployment.yaml`
 2. **Same-File Repeat** — `repeat: same-file` consolidates multiple rendered fragments separated by `---`
@@ -270,7 +364,7 @@ include:
             value: cache-config
 ```
 
-### 5.4 Hierarchical Resource Merging
+### 6.4 Hierarchical Resource Merging
 
 Rules:
 
@@ -286,7 +380,7 @@ miko-manifest build --env dev --output-dir out --show-config-tree
 miko-manifest build --env dev --output-dir out --debug-config
 ```
 
-### 5.5 Safety Controls
+### 6.5 Safety Controls
 
 - Circular include detection
 - Max recursion depth (fails fast if exceeded)
@@ -294,9 +388,9 @@ miko-manifest build --env dev --output-dir out --debug-config
 
 ---
 
-## 6. Template Authoring
+## 7. Template Authoring
 
-### 6.1 Basics
+### 7.1 Basics
 
 Templates are standard Go `text/template` files. Variables declared in configuration become top-level keys.
 
@@ -314,7 +408,7 @@ spec:
           image: "{{ .image }}:{{ .tag }}"
 ```
 
-### 6.2 Helpful Patterns
+### 7.2 Helpful Patterns
 
 | Need          | Pattern                                               |
 | ------------- | ----------------------------------------------------- | --------------------------------------------------- |
@@ -322,7 +416,7 @@ spec:
 | Uppercase     | `{{ .app_name                                         | upper }}` (add custom funcs by library integration) |
 | Join list     | `{{ join "," .listVar }}` (if custom func registered) |
 
-### 6.3 Debugging Templates
+### 7.3 Debugging Templates
 
 Add a temporary debug template:
 
@@ -334,7 +428,7 @@ Add a temporary debug template:
 
 Render selectively by adding to `include` during troubleshooting.
 
-### 6.4 Common Pitfalls
+### 7.4 Common Pitfalls
 
 | Issue                      | Cause                            | Fix                                             |
 | -------------------------- | -------------------------------- | ----------------------------------------------- |
@@ -344,7 +438,7 @@ Render selectively by adding to `include` during troubleshooting.
 
 ---
 
-## 7. Schema Validation
+## 8. Schema Validation
 
 ### 7.1 Where Schemas Come From
 
@@ -375,7 +469,7 @@ When you build, a marker enables `validate` to infer which environment's schemas
 
 ---
 
-## 8. Advanced Usage
+## 9. Advanced Usage
 
 ### 8.1 Variable Overrides
 
@@ -458,7 +552,7 @@ verify:
 
 ---
 
-## 9. Examples (Patterns Cookbook)
+## 10. Examples (Patterns Cookbook)
 
 ### 9.1 Multi-Environment Evolution
 
@@ -527,7 +621,7 @@ miko-manifest validate --dir output --env dev
 
 ---
 
-## 10. Comparison with Ecosystem Tools
+## 11. Comparison with Ecosystem Tools
 
 | Tool         | Primary Abstraction                  | Strengths                            | Where Miko-Manifest Differs                    |
 | ------------ | ------------------------------------ | ------------------------------------ | ---------------------------------------------- |
@@ -557,7 +651,7 @@ miko-manifest validate --dir output --env dev
 
 ---
 
-## 11. Roadmap / Extensibility (Indicative)
+## 12. Roadmap / Extensibility (Indicative)
 
 Potential directions (community-driven):
 
@@ -570,7 +664,7 @@ Potential directions (community-driven):
 
 ---
 
-## 12. FAQ
+## 13. FAQ
 
 **Q: Can I reference one variable inside another?**  
 A: Currently resolution is single-pass; pre-compose in your environment file or override via CLI.
@@ -589,7 +683,7 @@ A: Not recommended, but you can omit the `validate` step or use `--skip-schema-v
 
 ---
 
-## 13. Troubleshooting Quick Table
+## 14. Troubleshooting Quick Table
 
 | Problem                          | Likely Cause             | Resolution                                            |
 | -------------------------------- | ------------------------ | ----------------------------------------------------- |
@@ -600,7 +694,7 @@ A: Not recommended, but you can omit the `validate` step or use `--skip-schema-v
 
 ---
 
-## 14. Conclusion
+## 15. Conclusion
 
 `miko-manifest` fills a pragmatic niche: **structured, validated manifest generation** using familiar primitives without imposing a packaging ecosystem. It complements tools like Helm (packaging) or Kustomize (patching) by offering a middle path—ideal for teams wanting reproducibility, environment layering, and schema assurance with minimal ceremony.
 
@@ -610,7 +704,7 @@ You can adopt it incrementally: start by wrapping existing templates, then layer
 
 ---
 
-## 15. License & Links
+## 16. License & Links
 
 - License: MIT (see `LICENSE`)
 - Repository: https://github.com/jepemo/miko-manifest

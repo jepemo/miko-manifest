@@ -155,6 +155,7 @@ Validates configuration YAML files before generating manifests. This command che
 **Options:**
 
 - `--config`, `-c`: Configuration directory path (default: "config")
+- `--verbose`, `-v`: Show detailed processing information
 
 Use this command to catch configuration errors early in your workflow.
 
@@ -199,6 +200,43 @@ miko-manifest validate --env dev --dir output
 miko-manifest validate --skip-schema-validation --dir output
 ```
 
+### Output Modes
+
+All commands (`check`, `build`, `validate`) support two output modes to suit different use cases:
+
+**Standard Mode** (default):
+
+- Shows only essential results and file validation status
+- Clean, parseable output suitable for automation and CI/CD
+- Displays warnings, errors, and summary information
+
+```bash
+# Standard output example
+miko-manifest check
+WARNING: config/schemas.yaml - Null value for key 'schemas'
+SUMMARY: 2 file(s) validated successfully, 0 error(s)
+SUMMARY: All YAML configuration files are valid
+```
+
+**Verbose Mode** (with `--verbose` flag):
+
+- Shows detailed processing steps and informational messages
+- Ideal for debugging, learning, and understanding what the tool is doing
+- Includes all standard output plus step-by-step process information
+
+```bash
+# Verbose output example
+miko-manifest check --verbose
+INFO: Using config directory: config
+STEP: Checking YAML files in directory: config
+STEP: Linting YAML files in config using native Go YAML parser
+WARNING: config/schemas.yaml - Null value for key 'schemas'
+SUMMARY: 2 file(s) validated successfully, 0 error(s)
+SUMMARY: All YAML configuration files are valid
+```
+
+Use `--verbose` for troubleshooting or when you want to understand the internal process.
+
 **Integrated Schema Validation:**
 
 Schemas are now defined directly in your environment configuration files:
@@ -237,6 +275,7 @@ miko-manifest build [flags]
 - `--templates`, `-t`: Templates directory path (default: "templates")
 - `--var`: Override variables (format: `--var NAME=VALUE`)
 - `--validate`: Perform validation after build (equivalent to build + validate)
+- `--verbose`: Show detailed build and validation information
 - `--debug-config`: Show the final merged configuration
 - `--show-config-tree`: Show the hierarchy of included resources
 
@@ -252,6 +291,7 @@ miko-manifest validate [directory] [flags]
 - `--env`, `-e`: Environment to load schemas from (auto-detected if not specified)
 - `--config`, `-c`: Configuration directory path (default: "config")
 - `--skip-schema-validation`: Skip schema loading for faster YAML-only validation
+- `--verbose`: Show detailed validation information
 
 ### Check Command Options
 
@@ -262,6 +302,7 @@ miko-manifest check [flags]
 **Flags:**
 
 - `--config`, `-c`: Configuration directory path to validate (default: "config")
+- `--verbose`, `-v`: Show detailed processing information
 
 ### Init Command Options
 

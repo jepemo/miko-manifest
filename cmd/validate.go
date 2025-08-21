@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/jepemo/miko-manifest/pkg/mikomanifest"
+	"github.com/jepemo/miko-manifest/pkg/output"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +13,7 @@ var validateDir string
 var validateEnvironment string
 var validateConfigDir string
 var validateSkipSchemaValidation bool
+var validateVerbose bool
 
 var validateCmd = &cobra.Command{
 	Use:   "validate",
@@ -33,6 +35,9 @@ Related commands:
   - Use 'check' to validate configuration files before generation
   - Use 'config' to inspect configuration values and schemas`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Create output options
+		outputOpts := &output.OutputOptions{Verbose: validateVerbose}
+		
 		// If no directory specified but environment is provided, try to detect from environment info
 		if validateDir == "" && validateEnvironment != "" {
 			return
@@ -44,7 +49,7 @@ Related commands:
 		}
 		
 		if validateDir == "" {
-			fmt.Println("Error: directory is required (use --dir or provide as argument)")
+			outputOpts.PrintError("Input validation", "directory is required (use --dir or provide as argument)")
 			os.Exit(1)
 		}
 		
@@ -53,10 +58,11 @@ Related commands:
 			Environment:          validateEnvironment,
 			ConfigDir:            validateConfigDir,
 			SkipSchemaValidation: validateSkipSchemaValidation,
+			OutputOpts:           outputOpts,
 		}
 		
 		if err := mikomanifest.LintDirectory(options); err != nil {
-			fmt.Printf("Error validating directory: %v\n", err)
+			outputOpts.PrintError("Directory validation", fmt.Sprintf("Error validating directory: %v", err))
 			os.Exit(1)
 		}
 	},
@@ -67,4 +73,5 @@ func init() {
 	validateCmd.Flags().StringVarP(&validateEnvironment, "env", "e", "", "Environment configuration to use for schema loading")
 	validateCmd.Flags().StringVarP(&validateConfigDir, "config", "c", "config", "Configuration directory path (used with --env)")
 	validateCmd.Flags().BoolVar(&validateSkipSchemaValidation, "skip-schema-validation", false, "Skip custom resource schema validation")
+	validateCmd.Flags().BoolVar(&validateVerbose, "verbose", false, "Show detailed validation information")
 }
