@@ -1,8 +1,5 @@
 # Build stage
-FROM golang:1.25-alpine AS builder
-
-# Install git for Go modules
-RUN apk add --no-cache git
+FROM golang:1.20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -16,34 +13,27 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o miko-manifest .
+# Build optimized static binary
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o miko-manifest .
 
-# Final stage
-FROM alpine:latest
+# Final stage - minimal image
+FROM alpine:3.19
 
-# Install yamllint and other dependencies
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    && pip3 install --break-system-packages yamllint
+# Install only essential certificates for HTTPS requests
+RUN apk --no-cache add ca-certificates
 
-# Create non-root user
-RUN addgroup -g 1001 -S miko && \
-    adduser -u 1001 -S miko -G miko
-
-# Copy the binary from builder stage
-COPY --from=builder /app/miko-manifest /usr/local/bin/miko-manifest
-
-# Set permissions
-RUN chmod +x /usr/local/bin/miko-manifest
-
-# Switch to non-root user
-USER miko
+# Create non-root user for security
+RUN adduser -D -H -h /app appuser
 
 # Set working directory
-WORKDIR /workspace
+WORKDIR /app
 
-# Default command
-ENTRYPOINT ["miko-manifest"]
+# Copy the binary from builder stage
+COPY --from=builder /app/miko-manifest .
+
+# Switch to non-root user
+USER appuser
+
+# Default entrypoint
+ENTRYPOINT ["/app/miko-manifest"]
 CMD ["--help"]
