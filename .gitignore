@@ -39,6 +39,7 @@ Thumbs.db
 # Local development files
 .env
 .env.local
+.envrc
 
 # Build artifacts
 /dist/

@@ -27,7 +27,7 @@ builds:
 
 archives:
   - id: miko-manifest
-    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
         format: zip
@@ -39,6 +39,17 @@ archives:
 
 checksum:
   name_template: "checksums.txt"
+
+# Añadido: Firmas de artefactos
+signs:
+  - artifacts: checksum
+    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+
+# Añadido: Generación de SBOM
+sboms:
+  - artifacts: archive
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_sbom.spdx.json"
 
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
@@ -82,12 +93,29 @@ release:
 
     # Using Docker
     docker pull ghcr.io/jepemo/miko-manifest:{{.Tag}}
+
+    # Using Nix (requires flakes enabled)
+    nix profile install github:jepemo/miko-manifest
     ```
   footer: |
     ## Docker Images
 
     - `ghcr.io/jepemo/miko-manifest:{{.Tag}}`
     - `ghcr.io/jepemo/miko-manifest:latest`
+
+    ## Verifying signatures
+
+    ```bash
+    # Download the checksums and signature
+    curl -LO https://github.com/jepemo/miko-manifest/releases/download/{{.Tag}}/checksums.txt
+    curl -LO https://github.com/jepemo/miko-manifest/releases/download/{{.Tag}}/checksums.txt.sig
+
+    # Import GPG key
+    gpg --keyserver keyserver.ubuntu.com --recv-keys <YOUR_KEY_ID>
+    
+    # Verify signature
+    gpg --verify checksums.txt.sig checksums.txt
+    ```
 
     **Full Changelog**: https://github.com/jepemo/miko-manifest/compare/{{.PreviousTag}}...{{.Tag}}
 
@@ -96,8 +124,10 @@ dockers:
       - "ghcr.io/jepemo/miko-manifest:{{ .Tag }}"
       - "ghcr.io/jepemo/miko-manifest:latest"
     dockerfile: Dockerfile
+    use: buildx
     build_flag_templates:
       - "--pull"
+      - "--platform=linux/amd64,linux/arm64"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
