@@ -80,9 +80,14 @@ func LintDirectory(options LintOptions) error {
 	// Run Kubernetes validation
 	k8sSuccess := validateKubernetesManifestsWithOutput(options.Directory, schemaRegistry, outputOpts)
 	
-	// Final result
+	// Final comprehensive summary
 	if yamlLintSuccess && k8sSuccess {
-		outputOpts.PrintSummary("All validations passed")
+		// Get file count for final summary
+		yamlFiles, _ := filepath.Glob(filepath.Join(options.Directory, "*.yaml"))
+		ymlFiles, _ := filepath.Glob(filepath.Join(options.Directory, "*.yml"))
+		totalFiles := len(yamlFiles) + len(ymlFiles)
+		
+		outputOpts.PrintSummary(fmt.Sprintf("All validations passed - %d file(s) validated successfully", totalFiles))
 	} else {
 		errorParts := []string{}
 		if !yamlLintSuccess {
@@ -125,9 +130,9 @@ func CheckConfigDirectory(options CheckOptions) error {
 	success := lintYAMLFilesWithOutput(options.ConfigDir, outputOpts)
 	
 	if success {
-		outputOpts.PrintSummary("All YAML configuration files are valid")
+		outputOpts.PrintSummary("All configuration files validated successfully")
 	} else {
-		outputOpts.PrintSummary("YAML configuration validation failed")
+		outputOpts.PrintSummary("Configuration validation failed")
 		return fmt.Errorf("yaml configuration validation failed")
 	}
 	
@@ -182,12 +187,12 @@ func lintYAMLFilesWithOutput(directory string, outputOpts *output.OutputOptions)
 		}
 	}
 	
-	// Print summary using the new output system
+	// Print result using the new output system
 	if yamlErrors > 0 {
-		outputOpts.PrintSummary(fmt.Sprintf("YAML validation failed: %d file(s) validated successfully, %d error(s)", yamlValidated, yamlErrors))
+		outputOpts.PrintResult(fmt.Sprintf("YAML syntax validation - %d file(s) validated successfully, %d error(s)", yamlValidated, yamlErrors))
 		return false
 	} else {
-		outputOpts.PrintSummary(fmt.Sprintf("%d file(s) validated successfully, %d error(s)", yamlValidated, yamlErrors))
+		outputOpts.PrintResult(fmt.Sprintf("YAML syntax validation - %d file(s) validated successfully, %d error(s)", yamlValidated, yamlErrors))
 		return true
 	}
 }
@@ -532,11 +537,11 @@ func validateKubernetesManifestsWithOutput(directory string, schemaRegistry *Sch
 	}
 	
 	if k8sValidated > 0 {
-		summary := fmt.Sprintf("Kubernetes validation: %d manifest(s) validated successfully", k8sValidated)
+		summary := fmt.Sprintf("Kubernetes schema validation - %d manifest(s) validated successfully", k8sValidated)
 		if customResourcesValidated > 0 {
 			summary += fmt.Sprintf(" (%d custom resource(s))", customResourcesValidated)
 		}
-		outputOpts.PrintSummary(summary)
+		outputOpts.PrintResult(summary)
 	}
 	
 	return k8sErrors == 0

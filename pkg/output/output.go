@@ -57,6 +57,11 @@ func (o *OutputOptions) PrintSummary(msg string) {
 	fmt.Printf("SUMMARY: %s\n", msg)
 }
 
+// PrintResult prints intermediate result messages (always visible)
+func (o *OutputOptions) PrintResult(msg string) {
+	fmt.Printf("RESULT: %s\n", msg)
+}
+
 // NewOutputOptions creates a new OutputOptions instance
 func NewOutputOptions(verbose bool) *OutputOptions {
 	return &OutputOptions{
