@@ -190,7 +190,8 @@ jobs:
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Install Syft for SBOM
-        uses: anchore/sbom-action/download-syft@v0
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
