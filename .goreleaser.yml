@@ -52,11 +52,11 @@ signs:
         "${artifact}",
       ]
 
-# Añadido: Generación de SBOM
-sboms:
-  - artifacts: archive
-    documents:
-      - "{{ .ProjectName }}_{{ .Version }}_sbom.spdx.json"
+# Añadido: Generación de SBOM (DESACTIVADO - causa problemas con syft)
+# sboms:
+#   - artifacts: archive
+#     documents:
+#       - "{{ .ProjectName }}_{{ .Version }}_sbom.spdx.json"
 
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
