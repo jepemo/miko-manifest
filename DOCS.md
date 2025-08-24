@@ -658,20 +658,7 @@ miko-manifest validate --dir output --env dev
 
 ---
 
-## 12. Roadmap / Extensibility (Indicative)
-
-Potential directions (community-driven):
-
-- Pluggable template function registry
-- Built-in secret resolution strategies
-- Remote environment config sources (Git/OCI)
-- Built-in diff against live cluster (dry-run compare)
-
-> Check the issue tracker for active proposals.
-
----
-
-## 13. FAQ
+## 11. FAQ
 
 **Q: Can I reference one variable inside another?**  
 A: Currently resolution is single-pass; pre-compose in your environment file or override via CLI.
@@ -690,7 +677,7 @@ A: Not recommended, but you can omit the `validate` step or use `--skip-schema-v
 
 ---
 
-## 14. Troubleshooting Quick Table
+## 12. Troubleshooting Quick Table
 
 | Problem                          | Likely Cause             | Resolution                                            |
 | -------------------------------- | ------------------------ | ----------------------------------------------------- |
@@ -701,21 +688,13 @@ A: Not recommended, but you can omit the `validate` step or use `--skip-schema-v
 
 ---
 
-## 15. Conclusion
+## 13. Conclusion
 
 `miko-manifest` fills a pragmatic niche: **structured, validated manifest generation** using familiar primitives without imposing a packaging ecosystem. It complements tools like Helm (packaging) or Kustomize (patching) by offering a middle path—ideal for teams wanting reproducibility, environment layering, and schema assurance with minimal ceremony.
 
 You can adopt it incrementally: start by wrapping existing templates, then layer in hierarchical configs, then enable schemas for CRDs as maturity grows.
 
 > If this tool streamlines your delivery pipeline, consider contributing examples, schemas, or enhancements.
-
----
-
-## 16. License & Links
-
-- License: MIT (see `LICENSE`)
-- Repository: https://github.com/jepemo/miko-manifest
-- Issues: https://github.com/jepemo/miko-manifest/issues
 
 ---
 

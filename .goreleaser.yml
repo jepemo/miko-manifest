@@ -34,8 +34,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - templates/**/*
-      - config/**/*
 
 checksum:
   name_template: "checksums.txt"
@@ -43,7 +41,16 @@ checksum:
 # Añadido: Firmas de artefactos
 signs:
   - artifacts: checksum
-    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    args:
+      [
+        "--batch",
+        "-u",
+        "{{ .Env.GPG_FINGERPRINT }}",
+        "--output",
+        "${signature}",
+        "--detach-sign",
+        "${artifact}",
+      ]
 
 # Añadido: Generación de SBOM
 sboms:
@@ -112,7 +119,7 @@ release:
 
     # Import GPG key
     gpg --keyserver keyserver.ubuntu.com --recv-keys <YOUR_KEY_ID>
-    
+
     # Verify signature
     gpg --verify checksums.txt.sig checksums.txt
     ```
@@ -134,9 +141,6 @@ dockers:
       - "--label=org.opencontainers.image.version={{.Version}}"
       - "--label=org.opencontainers.image.source={{.GitURL}}"
       - "--label=org.opencontainers.image.description=Configuration management for Kubernetes manifests with templating capabilities"
-    extra_files:
-      - templates/
-      - config/
 
 nfpms:
   - id: miko-manifest
@@ -150,8 +154,3 @@ nfpms:
       - deb
       - rpm
     bindir: /usr/local/bin
-    contents:
-      - src: ./templates/
-        dst: /usr/local/share/miko-manifest/templates/
-      - src: ./config/
-        dst: /usr/local/share/miko-manifest/config/
