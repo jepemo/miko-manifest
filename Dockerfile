@@ -17,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o miko-manifest .
 
 # Final stage - minimal image
-FROM alpine:3.19
+FROM alpine:3.22
 
 # Install only essential certificates for HTTPS requests
 RUN apk --no-cache add ca-certificates
