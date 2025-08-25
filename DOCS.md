@@ -56,13 +56,13 @@ go install github.com/jepemo/miko-manifest@latest
 ### 2.2 Docker Image
 
 ```bash
-docker pull jepemo/miko-manifest:latest
+docker pull ghcr.io/jepemo/miko-manifest:latest
 ```
 
 Run with your workspace mounted:
 
 ```bash
-docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest --help
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest --help
 ```
 
 ### 2.3 Verifying Installation
@@ -88,6 +88,32 @@ miko-manifest -v
 # commit: abc1234
 # built: 2025-08-25_16:28:17
 ```
+
+### 2.4 Docker Usage Examples
+
+All commands work with Docker using the following pattern:
+
+```bash
+# Basic syntax
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest [command] [flags]
+
+# Initialize a new project
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest init
+
+# Check configuration
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest check
+
+# Build manifests
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest build --env dev --output-dir output
+
+# Validate manifests
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest validate --dir output
+
+# Inspect configuration
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest config --env dev --tree
+```
+
+**Note**: The Docker image has the entrypoint pre-configured, so you only need to specify the command and flags.
 
 ---
 
@@ -574,18 +600,18 @@ stages: [validate, build, verify]
 
 validate-config:
   stage: validate
-  image: jepemo/miko-manifest:latest
+  image: ghcr.io/jepemo/miko-manifest:latest
   script: miko-manifest check
 
 generate:
   stage: build
-  image: jepemo/miko-manifest:latest
+  image: ghcr.io/jepemo/miko-manifest:latest
   script: miko-manifest build --env dev --output-dir output
   artifacts: { paths: [output/] }
 
 verify:
   stage: verify
-  image: jepemo/miko-manifest:latest
+  image: ghcr.io/jepemo/miko-manifest:latest
   script: miko-manifest validate --dir output
 ```
 
