@@ -200,7 +200,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --skip=sign
+          args: release --clean --skip=sign --replace
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
