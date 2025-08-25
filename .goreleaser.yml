@@ -38,19 +38,19 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-# Añadido: Firmas de artefactos
-signs:
-  - artifacts: checksum
-    args:
-      [
-        "--batch",
-        "-u",
-        "{{ .Env.GPG_FINGERPRINT }}",
-        "--output",
-        "${signature}",
-        "--detach-sign",
-        "${artifact}",
-      ]
+# Firmas DESACTIVADAS: evitamos dependencias GPG en CI
+# signs:
+#   - artifacts: checksum
+#     args:
+#       [
+#         "--batch",
+#         "-u",
+#         "{{ .Env.GPG_FINGERPRINT }}",
+#         "--output",
+#         "${signature}",
+#         "--detach-sign",
+#         "${artifact}",
+#       ]
 
 # Añadido: Generación de SBOM (DESACTIVADO - causa problemas con syft)
 # sboms:

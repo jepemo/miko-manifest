@@ -47,7 +47,7 @@ jobs:
         if: github.event_name == 'push'
         uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.out
+          files: ./coverage.out
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -175,8 +175,8 @@ jobs:
     needs: [test, lint, build, docker-build, integration-test]
     if: github.event_name == 'release'
     permissions:
-      contents: read
-      packages: write
+  contents: write
+  packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -186,43 +186,6 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      # Detect if a GPG private key was provided via secrets
-      - name: Detect GPG private key
-        id: detect_gpg
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-        shell: bash
-        run: |
-          if [ -n "${GPG_PRIVATE_KEY}" ]; then
-            echo "has_gpg=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "has_gpg=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # Import GPG key if provided (exposes 'fingerprint' output)
-      - name: Import GPG key
-        id: import_gpg
-        if: ${{ steps.detect_gpg.outputs.has_gpg == 'true' }}
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.GPG_PASSPHRASE }}
-
-      # Resolve the GPG fingerprint from repo secret or import output
-      - name: Resolve GPG fingerprint
-        id: gpg_fp
-        shell: bash
-        env:
-          GPG_FINGERPRINT_SECRET: ${{ secrets.GPG_FINGERPRINT }}
-        run: |
-          if [ -n "${GPG_FINGERPRINT_SECRET}" ]; then
-            echo "fingerprint=${GPG_FINGERPRINT_SECRET}" >> "$GITHUB_OUTPUT"
-          elif [ -n "${{ steps.import_gpg.outputs.fingerprint }}" ]; then
-            echo "fingerprint=${{ steps.import_gpg.outputs.fingerprint }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "fingerprint=" >> "$GITHUB_OUTPUT"
-          fi
-
       # Log in to GHCR for GoReleaser Docker publishing
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -231,21 +194,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Run GoReleaser with signing when fingerprint is available
-      - name: Run GoReleaser (signed)
-        if: ${{ steps.gpg_fp.outputs.fingerprint != '' }}
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ steps.gpg_fp.outputs.fingerprint }}
-
-      # Fallback: run without signing if no fingerprint is present
-      - name: Run GoReleaser (no-sign)
-        if: ${{ steps.gpg_fp.outputs.fingerprint == '' }}
+      # Run GoReleaser without signing to avoid GPG requirements
+      - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
