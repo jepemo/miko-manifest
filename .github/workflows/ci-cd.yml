@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main, develop]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
     branches: [main, develop]
   release:
@@ -203,7 +203,7 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: release --clean --skip=sign --replace
+          args: release --clean --skip=sign --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
