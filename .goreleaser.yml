@@ -20,9 +20,9 @@ builds:
       - CGO_ENABLED=0
     ldflags:
       - -s -w
-      - -X main.version={{.Version}}
-      - -X main.commit={{.Commit}}
-      - -X main.date={{.Date}}
+      - -X github.com/jepemo/miko-manifest/cmd.version={{.Version}}
+      - -X github.com/jepemo/miko-manifest/cmd.commit={{.Commit}}
+      - -X github.com/jepemo/miko-manifest/cmd.date={{.Date}}
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:

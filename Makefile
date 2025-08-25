@@ -4,7 +4,8 @@
 BINARY_NAME=miko-manifest
 VERSION?=dev
 BUILD_TIME=$(shell date +%Y-%m-%d_%H:%M:%S)
-LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)"
+GIT_COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LDFLAGS=-ldflags "-X github.com/jepemo/miko-manifest/cmd.version=$(VERSION) -X github.com/jepemo/miko-manifest/cmd.commit=$(GIT_COMMIT) -X github.com/jepemo/miko-manifest/cmd.date=$(BUILD_TIME)"
 
 # Go parameters
 GOCMD=go

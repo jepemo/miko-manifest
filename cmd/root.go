@@ -1,7 +1,17 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
+)
+
+// Version information - injected at build time via ldflags
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
 )
 
 var rootCmd = &cobra.Command{
@@ -28,6 +38,20 @@ func Execute() error {
 }
 
 func init() {
+	// Add version flag
+	var versionFlag bool
+	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
+	
+	// Handle version flag before command execution
+	rootCmd.PreRun = func(cmd *cobra.Command, args []string) {
+		if versionFlag {
+			fmt.Printf("miko-manifest version %s\n", version)
+			fmt.Printf("commit: %s\n", commit)
+			fmt.Printf("built: %s\n", date)
+			os.Exit(0)
+		}
+	}
+
 	// Add all subcommands
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(buildCmd)
