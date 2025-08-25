@@ -46,10 +46,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Update Docker Hub description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: jepemo/miko-manifest
-          short-description: "Configuration management for Kubernetes manifests with templating capabilities"
+      # Docker Hub description update DESACTIVADO: usamos GHCR, no Docker Hub
+      # - name: Update Docker Hub description
+      #   uses: peter-evans/dockerhub-description@v4
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #     repository: jepemo/miko-manifest
+      #     short-description: "Configuration management for Kubernetes manifests with templating capabilities"
