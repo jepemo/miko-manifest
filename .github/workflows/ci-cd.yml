@@ -175,8 +175,8 @@ jobs:
     needs: [test, lint, build, docker-build, integration-test]
     if: github.event_name == 'release'
     permissions:
-  contents: write
-  packages: write
+      contents: write
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
