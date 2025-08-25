@@ -126,21 +126,22 @@ release:
 
     **Full Changelog**: https://github.com/jepemo/miko-manifest/compare/{{.PreviousTag}}...{{.Tag}}
 
-dockers:
-  - image_templates:
-      - "ghcr.io/jepemo/miko-manifest:{{ .Tag }}"
-      - "ghcr.io/jepemo/miko-manifest:latest"
-    dockerfile: Dockerfile
-    use: buildx
-    build_flag_templates:
-      - "--pull"
-      - "--platform=linux/amd64,linux/arm64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-      - "--label=org.opencontainers.image.source={{.GitURL}}"
-      - "--label=org.opencontainers.image.description=Configuration management for Kubernetes manifests with templating capabilities"
+# Docker build DESACTIVADO: el job docker-build del workflow maneja esto
+# dockers:
+#   - image_templates:
+#       - "ghcr.io/jepemo/miko-manifest:{{ .Tag }}"
+#       - "ghcr.io/jepemo/miko-manifest:latest"
+#     dockerfile: Dockerfile
+#     use: buildx
+#     build_flag_templates:
+#       - "--pull"
+#       - "--platform=linux/amd64,linux/arm64"
+#       - "--label=org.opencontainers.image.created={{.Date}}"
+#       - "--label=org.opencontainers.image.title={{.ProjectName}}"
+#       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+#       - "--label=org.opencontainers.image.version={{.Version}}"
+#       - "--label=org.opencontainers.image.source={{.GitURL}}"
+#       - "--label=org.opencontainers.image.description=Configuration management for Kubernetes manifests with templating capabilities"
 
 nfpms:
   - id: miko-manifest
