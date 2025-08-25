@@ -73,6 +73,22 @@ miko-manifest --help
 
 You should see all subcommands (config, check, build, validate, init).
 
+#### Version Information
+
+Check the installed version and build details:
+
+```bash
+# Show version information
+miko-manifest --version
+# or
+miko-manifest -v
+
+# Example output:
+# miko-manifest version 1.0.0
+# commit: abc1234
+# built: 2025-08-25_16:28:17
+```
+
 ---
 
 ## 3. Quick Start
@@ -174,6 +190,31 @@ SUMMARY: All YAML configuration files are valid
 ---
 
 ## 5. Command Deep Dive
+
+### 5.0 Global Flags
+
+#### Version Information
+
+Get version, commit, and build information:
+
+```bash
+miko-manifest --version
+miko-manifest -v
+
+# Example output:
+# miko-manifest version 1.0.0
+# commit: abc1234
+# built: 2025-08-25_16:28:17
+```
+
+#### Help
+
+Get command help:
+
+```bash
+miko-manifest --help           # General help
+miko-manifest [command] --help # Command-specific help
+```
 
 ### 5.1 `init`
 
