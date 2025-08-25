@@ -161,7 +161,14 @@ More constructors, linting, and validation helpers are listed in [DOCS.md](DOCS.
 Run without local toolchain:
 
 ```bash
-docker run --rm -v "$(pwd):/workspace" jepemo/miko-manifest:latest check --config /workspace/config
+# Check configuration
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest check
+
+# Build manifests  
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest build --env dev --output-dir output
+
+# Validate generated manifests
+docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest validate --dir output
 ```
 
 Typical pipeline: check -> build -> validate. Minimal GitHub Actions and GitLab CI templates are provided in the documentation.
