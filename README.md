@@ -21,10 +21,20 @@ The result: repeatable builds, early failure detection, and transparent configur
 
 ### 2. Quick Start
 
-Install (latest tagged version):
+**Easy installation (recommended):**
 
 ```bash
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash
+```
+
+**Alternative installations:**
+
+```bash
+# Using Go
 go install github.com/jepemo/miko-manifest@latest
+
+# Using Docker
+docker pull ghcr.io/jepemo/miko-manifest:latest
 ```
 
 Scaffold a project:

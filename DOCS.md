@@ -45,7 +45,33 @@ You eliminate input errors early, then generate, then validate produced artifact
 
 ## 2. Installation
 
-### 2.1 From Source (Go >= 1.21 recommended)
+### 2.1 Quick Install (Recommended)
+
+The easiest way to install miko-manifest is using our installation script:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash
+```
+
+This script will:
+- ✅ Detect your platform (Linux/macOS/Windows, amd64/arm64)
+- ✅ Download the latest release binary from GitHub
+- ✅ Remove any existing installations automatically
+- ✅ Install to `/usr/local/bin` (or `~/.local/bin` if no sudo)
+- ✅ Verify the installation works correctly
+- ✅ Clean up temporary files
+
+**Options:**
+```bash
+# View installation script help
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash -s -- --help
+
+# Custom installation directory (set before running)
+export INSTALL_DIR="$HOME/bin"
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash
+```
+
+### 2.2 From Source (Go >= 1.21 recommended)
 
 ```bash
 go install github.com/jepemo/miko-manifest@latest
@@ -53,7 +79,7 @@ go install github.com/jepemo/miko-manifest@latest
 
 `$GOBIN` (or `$GOPATH/bin`) should be on your `PATH`.
 
-### 2.2 Docker Image
+### 2.3 Docker Image
 
 ```bash
 docker pull ghcr.io/jepemo/miko-manifest:latest
@@ -65,7 +91,7 @@ Run with your workspace mounted:
 docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest --help
 ```
 
-### 2.3 Verifying Installation
+### 2.4 Verifying Installation
 
 ```bash
 miko-manifest --help
@@ -89,7 +115,7 @@ miko-manifest -v
 # built: 2025-08-25_16:28:17
 ```
 
-### 2.4 Docker Usage Examples
+### 2.5 Docker Usage Examples
 
 All commands work with Docker using the following pattern:
 
