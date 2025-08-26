@@ -54,6 +54,7 @@ curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh
 ```
 
 This script will:
+
 - ✅ Detect your platform (Linux/macOS/Windows, amd64/arm64)
 - ✅ Download the latest release binary from GitHub
 - ✅ Remove any existing installations automatically
@@ -62,13 +63,29 @@ This script will:
 - ✅ Clean up temporary files
 
 **Options:**
+
 ```bash
 # View installation script help
 curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash -s -- --help
 
+# Uninstall miko-manifest completely
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash -s -- --uninstall
+
 # Custom installation directory (set before running)
 export INSTALL_DIR="$HOME/bin"
 curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash
+```
+
+**Uninstallation:**
+
+The installation script also provides an easy uninstallation option that will:
+- ✅ Find all miko-manifest installations on the system
+- ✅ Show current version before removal
+- ✅ Remove binaries from all standard locations
+- ✅ Provide sudo instructions for system-wide installations
+
+```bash
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash -s -- --uninstall
 ```
 
 ### 2.2 From Source (Go >= 1.21 recommended)

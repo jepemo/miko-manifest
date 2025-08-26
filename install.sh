@@ -109,6 +109,52 @@ remove_existing() {
     done
 }
 
+# Uninstall function
+uninstall() {
+    echo ""
+    echo "🗑️  Miko-Manifest Uninstallation"
+    echo "================================="
+    echo ""
+    
+    local found_installations=false
+    
+    # Check common installation locations
+    for dir in "$INSTALL_DIR" "$USER_INSTALL_DIR" "$HOME/bin" "/usr/bin"; do
+        local binary_path="$dir/$BINARY_NAME"
+        if [ -f "$binary_path" ]; then
+            found_installations=true
+            print_info "Found installation at $binary_path"
+            
+            # Try to get version before removing
+            if [ -x "$binary_path" ]; then
+                local version_output
+                version_output=$("$binary_path" --version 2>/dev/null || echo "Version info not available")
+                print_info "Current version: $version_output"
+            fi
+            
+            if [ -w "$dir" ] || [ "$dir" = "$USER_INSTALL_DIR" ] || [ "$dir" = "$HOME/bin" ]; then
+                rm -f "$binary_path"
+                print_success "Removed $BINARY_NAME from $binary_path"
+            else
+                print_warning "Cannot remove $binary_path (requires sudo)"
+                print_info "To remove manually, run: sudo rm -f $binary_path"
+            fi
+        fi
+    done
+    
+    if [ "$found_installations" = true ]; then
+        echo ""
+        print_success "🎉 Miko-Manifest uninstallation completed!"
+        print_info "Thank you for using Miko-Manifest!"
+    else
+        echo ""
+        print_warning "No Miko-Manifest installations found"
+        print_info "Nothing to uninstall"
+    fi
+    
+    echo ""
+}
+
 # Determine installation directory
 get_install_dir() {
     if [ -w "$INSTALL_DIR" ]; then
@@ -287,14 +333,26 @@ case "${1:-}" in
         echo ""
         echo "Usage:"
         echo "  curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash"
+        echo "  curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash -s -- --uninstall"
         echo ""
         echo "Options:"
-        echo "  --help, -h     Show this help message"
+        echo "  --help, -h        Show this help message"
+        echo "  --uninstall, -u   Uninstall miko-manifest from the system"
         echo ""
         echo "Environment Variables:"
-        echo "  INSTALL_DIR    Custom installation directory (default: /usr/local/bin or ~/.local/bin)"
+        echo "  INSTALL_DIR       Custom installation directory (default: /usr/local/bin or ~/.local/bin)"
+        echo ""
+        echo "Examples:"
+        echo "  # Install latest version"
+        echo "  curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash"
+        echo ""
+        echo "  # Uninstall"
+        echo "  curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash -s -- --uninstall"
         echo ""
         exit 0
+        ;;
+    "--uninstall"|"-u")
+        uninstall
         ;;
     "")
         main

@@ -27,6 +27,12 @@ The result: repeatable builds, early failure detection, and transparent configur
 curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash
 ```
 
+**Easy uninstallation:**
+
+```bash
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh | bash -s -- --uninstall
+```
+
 **Alternative installations:**
 
 ```bash
