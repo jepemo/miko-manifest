@@ -1,9 +1,9 @@
 package main
 
 import (
-"os"
+	"os"
 
-"github.com/jepemo/miko-manifest/cmd"
+	"github.com/jepemo/miko-manifest/cmd"
 )
 
 func main() {

@@ -79,6 +79,7 @@ curl -sSL https://raw.githubusercontent.com/jepemo/miko-manifest/main/install.sh
 **Uninstallation:**
 
 The installation script also provides an easy uninstallation option that will:
+
 - ✅ Find all miko-manifest installations on the system
 - ✅ Show current version before removal
 - ✅ Remove binaries from all standard locations

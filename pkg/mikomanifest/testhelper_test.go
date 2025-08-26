@@ -30,18 +30,18 @@ func (h *TestHelper) TempDir() string {
 // CreateFile creates a file with the given content in the temp directory
 func (h *TestHelper) CreateFile(filename, content string) string {
 	filePath := filepath.Join(h.tempDir, filename)
-	
+
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(filePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		h.t.Fatalf("Failed to create directory %s: %v", dir, err)
 	}
-	
+
 	err := os.WriteFile(filePath, []byte(content), 0644)
 	if err != nil {
 		h.t.Fatalf("Failed to create file %s: %v", filePath, err)
 	}
-	
+
 	return filePath
 }
 

@@ -100,9 +100,6 @@ release:
 
     # Using Docker
     docker pull ghcr.io/jepemo/miko-manifest:{{.Tag}}
-
-    # Using Nix (requires flakes enabled)
-    nix profile install github:jepemo/miko-manifest
     ```
   footer: |
     ## Docker Images

@@ -46,9 +46,9 @@ func LintDirectory(options LintOptions) error {
 			outputOpts.PrintInfo(fmt.Sprintf("Auto-detected environment: %s", env))
 		}
 	}
-	
+
 	outputOpts.PrintStep(fmt.Sprintf("Linting YAML files in directory: %s", options.Directory))
-	
+
 	// Check if directory exists
 	if stat, err := os.Stat(options.Directory); err != nil {
 		if os.IsNotExist(err) {
@@ -73,20 +73,20 @@ func LintDirectory(options LintOptions) error {
 			}
 		}
 	}
-	
+
 	// Run YAML linting
 	yamlLintSuccess := lintYAMLFilesWithOutput(options.Directory, outputOpts)
-	
+
 	// Run Kubernetes validation
 	k8sSuccess := validateKubernetesManifestsWithOutput(options.Directory, schemaRegistry, outputOpts)
-	
+
 	// Final comprehensive summary
 	if yamlLintSuccess && k8sSuccess {
 		// Get file count for final summary
 		yamlFiles, _ := filepath.Glob(filepath.Join(options.Directory, "*.yaml"))
 		ymlFiles, _ := filepath.Glob(filepath.Join(options.Directory, "*.yml"))
 		totalFiles := len(yamlFiles) + len(ymlFiles)
-		
+
 		outputOpts.PrintSummary(fmt.Sprintf("All validations passed - %d file(s) validated successfully", totalFiles))
 	} else {
 		errorParts := []string{}
@@ -96,11 +96,11 @@ func LintDirectory(options LintOptions) error {
 		if !k8sSuccess {
 			errorParts = append(errorParts, "Kubernetes validation")
 		}
-		
+
 		outputOpts.PrintError("Validation", fmt.Sprintf("FAILED: %s", strings.Join(errorParts, " and ")))
 		return fmt.Errorf("validation failed")
 	}
-	
+
 	return nil
 }
 
@@ -116,7 +116,7 @@ func CheckConfigDirectory(options CheckOptions) error {
 
 	outputOpts.PrintInfo(fmt.Sprintf("Using config directory: %s", options.ConfigDir))
 	outputOpts.PrintStep(fmt.Sprintf("Checking YAML files in directory: %s", options.ConfigDir))
-	
+
 	// Check if directory exists
 	if stat, err := os.Stat(options.ConfigDir); err != nil {
 		if os.IsNotExist(err) {
@@ -128,21 +128,21 @@ func CheckConfigDirectory(options CheckOptions) error {
 	}
 
 	success := lintYAMLFilesWithOutput(options.ConfigDir, outputOpts)
-	
+
 	if success {
 		outputOpts.PrintSummary("All configuration files validated successfully")
 	} else {
 		outputOpts.PrintSummary("Configuration validation failed")
 		return fmt.Errorf("yaml configuration validation failed")
 	}
-	
+
 	return nil
 }
 
 // lintYAMLFilesWithOutput lints YAML files using the new output system
 func lintYAMLFilesWithOutput(directory string, outputOpts *output.OutputOptions) bool {
 	outputOpts.PrintStep(fmt.Sprintf("Linting YAML files in %s using native Go YAML parser", directory))
-	
+
 	// Check if directory exists first
 	if stat, err := os.Stat(directory); err != nil {
 		if os.IsNotExist(err) {
@@ -155,30 +155,30 @@ func lintYAMLFilesWithOutput(directory string, outputOpts *output.OutputOptions)
 		outputOpts.PrintError(directory, "Not a directory")
 		return false
 	}
-	
+
 	// Find YAML files
 	yamlFiles, err := filepath.Glob(filepath.Join(directory, "*.yaml"))
 	if err != nil {
 		outputOpts.PrintError(directory, fmt.Sprintf("Error finding YAML files: %v", err))
 		return false
 	}
-	
+
 	ymlFiles, err := filepath.Glob(filepath.Join(directory, "*.yml"))
 	if err != nil {
 		outputOpts.PrintError(directory, fmt.Sprintf("Error finding YML files: %v", err))
 		return false
 	}
-	
+
 	allFiles := append(yamlFiles, ymlFiles...)
-	
+
 	if len(allFiles) == 0 {
 		outputOpts.PrintInfo(fmt.Sprintf("No YAML files found in %s", directory))
 		return true
 	}
-	
+
 	yamlErrors := 0
 	yamlValidated := 0
-	
+
 	for _, yamlFile := range allFiles {
 		if lintSingleYAMLFileWithOutput(yamlFile, outputOpts) {
 			yamlValidated++
@@ -186,7 +186,7 @@ func lintYAMLFilesWithOutput(directory string, outputOpts *output.OutputOptions)
 			yamlErrors++
 		}
 	}
-	
+
 	// Print result using the new output system
 	if yamlErrors > 0 {
 		outputOpts.PrintResult(fmt.Sprintf("YAML syntax validation - %d file(s) validated successfully, %d error(s)", yamlValidated, yamlErrors))
@@ -200,7 +200,7 @@ func lintYAMLFilesWithOutput(directory string, outputOpts *output.OutputOptions)
 // lintYAMLFiles performs YAML linting using native Go libraries
 func lintYAMLFiles(directory string) bool {
 	fmt.Printf("Linting YAML files in %s using native Go YAML parser...\n", directory)
-	
+
 	// Check if directory exists first
 	if stat, err := os.Stat(directory); err != nil {
 		if os.IsNotExist(err) {
@@ -213,30 +213,30 @@ func lintYAMLFiles(directory string) bool {
 		fmt.Printf("ERROR: %s is not a directory\n", directory)
 		return false
 	}
-	
+
 	// Find YAML files
 	yamlFiles, err := filepath.Glob(filepath.Join(directory, "*.yaml"))
 	if err != nil {
 		fmt.Printf("ERROR: Error finding YAML files: %v\n", err)
 		return false
 	}
-	
+
 	ymlFiles, err := filepath.Glob(filepath.Join(directory, "*.yml"))
 	if err != nil {
 		fmt.Printf("ERROR: Error finding YML files: %v\n", err)
 		return false
 	}
-	
+
 	allFiles := append(yamlFiles, ymlFiles...)
-	
+
 	if len(allFiles) == 0 {
 		fmt.Printf("ℹ No YAML files found in %s\n", directory)
 		return true
 	}
-	
+
 	yamlErrors := 0
 	yamlValidated := 0
-	
+
 	for _, yamlFile := range allFiles {
 		if lintSingleYAMLFile(yamlFile) {
 			yamlValidated++
@@ -244,9 +244,9 @@ func lintYAMLFiles(directory string) bool {
 			yamlErrors++
 		}
 	}
-	
+
 	fmt.Printf("YAML Linting Results: %d file(s) validated successfully, %d error(s)\n", yamlValidated, yamlErrors)
-	
+
 	return yamlErrors == 0
 }
 
@@ -257,7 +257,7 @@ func validateYAMLStructureWithOutput(parsed interface{}, fileName string, docInd
 	if isMultiDoc {
 		docInfo = fmt.Sprintf(" [doc %d]", docIndex)
 	}
-	
+
 	switch v := parsed.(type) {
 	case map[string]interface{}:
 		// Check for empty maps
@@ -265,7 +265,7 @@ func validateYAMLStructureWithOutput(parsed interface{}, fileName string, docInd
 			outputOpts.PrintWarning(fileName+docInfo, "Empty YAML document")
 			return true
 		}
-		
+
 		// Check for common YAML issues like duplicate keys (already handled by yaml.v3)
 		// Check for null values in critical fields
 		for key, value := range v {
@@ -273,22 +273,22 @@ func validateYAMLStructureWithOutput(parsed interface{}, fileName string, docInd
 				outputOpts.PrintWarning(fileName+docInfo, fmt.Sprintf("Null value for key '%s'", key))
 			}
 		}
-		
+
 	case []interface{}:
 		// Check for empty arrays
 		if len(v) == 0 {
 			outputOpts.PrintWarning(fileName+docInfo, "Empty YAML array")
 			return true
 		}
-		
+
 	case nil:
 		outputOpts.PrintWarning(fileName+docInfo, "Null YAML document")
 		return true
-		
+
 	default:
 		// Scalar values are generally fine
 	}
-	
+
 	return true
 }
 
@@ -346,25 +346,25 @@ func lintSingleYAMLFile(filePath string) bool {
 		fmt.Printf("ERROR: %s - Error reading file: %v\n", filepath.Base(filePath), err)
 		return false
 	}
-	
+
 	// Check if file is empty
 	if len(strings.TrimSpace(string(content))) == 0 {
 		fmt.Printf("WARNING: %s - Empty file\n", filepath.Base(filePath))
 		return true
 	}
-	
+
 	// Split by document separator to handle multi-document YAML files
 	documents := strings.Split(string(content), "\n---\n")
-	
+
 	hasValidDocuments := false
 	documentErrors := 0
-	
+
 	for i, doc := range documents {
 		doc = strings.TrimSpace(doc)
 		if doc == "" {
 			continue
 		}
-		
+
 		// Try to parse the YAML document
 		var parsed interface{}
 		if err := yaml.Unmarshal([]byte(doc), &parsed); err != nil {
@@ -388,12 +388,12 @@ func lintSingleYAMLFile(filePath string) bool {
 			}
 		}
 	}
-	
+
 	if !hasValidDocuments && documentErrors == 0 {
 		fmt.Printf("WARNING: %s - No valid YAML documents found\n", filepath.Base(filePath))
 		return true
 	}
-	
+
 	return documentErrors == 0
 }
 
@@ -403,7 +403,7 @@ func validateYAMLStructure(parsed interface{}, fileName string, docIndex int, is
 	if isMultiDoc {
 		docInfo = fmt.Sprintf(" [doc %d]", docIndex)
 	}
-	
+
 	switch v := parsed.(type) {
 	case map[string]interface{}:
 		// Check for empty maps
@@ -411,7 +411,7 @@ func validateYAMLStructure(parsed interface{}, fileName string, docIndex int, is
 			fmt.Printf("WARNING: %s%s - Empty YAML document\n", fileName, docInfo)
 			return true
 		}
-		
+
 		// Check for common YAML issues like duplicate keys (already handled by yaml.v3)
 		// Check for null values in critical fields
 		for key, value := range v {
@@ -419,22 +419,22 @@ func validateYAMLStructure(parsed interface{}, fileName string, docIndex int, is
 				fmt.Printf("WARNING: %s%s - Null value for key '%s'\n", fileName, docInfo, key)
 			}
 		}
-		
+
 	case []interface{}:
 		// Check for empty arrays
 		if len(v) == 0 {
 			fmt.Printf("WARNING: %s%s - Empty YAML array\n", fileName, docInfo)
 			return true
 		}
-		
+
 	case nil:
 		fmt.Printf("WARNING: %s%s - Null YAML document\n", fileName, docInfo)
 		return true
-		
+
 	default:
 		// Scalar values are generally fine
 	}
-	
+
 	return true
 }
 
@@ -442,31 +442,31 @@ func validateYAMLStructure(parsed interface{}, fileName string, docIndex int, is
 // validateKubernetesManifestsWithOutput validates Kubernetes manifests using the output system
 func validateKubernetesManifestsWithOutput(directory string, schemaRegistry *SchemaRegistry, outputOpts *output.OutputOptions) bool {
 	outputOpts.PrintStep(fmt.Sprintf("Validating Kubernetes manifests in %s", directory))
-	
+
 	// Find YAML files
 	yamlFiles, err := filepath.Glob(filepath.Join(directory, "*.yaml"))
 	if err != nil {
 		outputOpts.PrintError("File search", fmt.Sprintf("Error finding YAML files: %v", err))
 		return false
 	}
-	
+
 	ymlFiles, err := filepath.Glob(filepath.Join(directory, "*.yml"))
 	if err != nil {
 		outputOpts.PrintError("File search", fmt.Sprintf("Error finding YML files: %v", err))
 		return false
 	}
-	
+
 	allFiles := append(yamlFiles, ymlFiles...)
-	
+
 	if len(allFiles) == 0 {
 		outputOpts.PrintInfo(fmt.Sprintf("No YAML files found in %s for Kubernetes validation", directory))
 		return true
 	}
-	
+
 	k8sErrors := 0
 	k8sValidated := 0
 	customResourcesValidated := 0
-	
+
 	for _, yamlFile := range allFiles {
 		content, err := os.ReadFile(yamlFile)
 		if err != nil {
@@ -474,41 +474,41 @@ func validateKubernetesManifestsWithOutput(directory string, schemaRegistry *Sch
 			k8sErrors++
 			continue
 		}
-		
+
 		// Split by document separator
 		documents := strings.Split(string(content), "\n---\n")
-		
+
 		for i, doc := range documents {
 			doc = strings.TrimSpace(doc)
 			if doc == "" {
 				continue
 			}
-			
+
 			var manifest map[string]interface{}
 			if err := yaml.Unmarshal([]byte(doc), &manifest); err != nil {
 				outputOpts.PrintError(filepath.Base(yamlFile), fmt.Sprintf("YAML parsing error: %v", err))
 				k8sErrors++
 				continue
 			}
-			
+
 			if manifest == nil {
 				continue
 			}
-			
+
 			// Check if it looks like a Kubernetes manifest
 			_, hasAPIVersion := manifest["apiVersion"]
 			kind, hasKind := manifest["kind"]
-			
+
 			if !hasAPIVersion || !hasKind {
 				outputOpts.PrintInfo(fmt.Sprintf("%s - Not a Kubernetes manifest (missing apiVersion/kind)", filepath.Base(yamlFile)))
 				continue
 			}
-			
+
 			docInfo := ""
 			if len(documents) > 1 {
 				docInfo = fmt.Sprintf("[doc %d]", i+1)
 			}
-			
+
 			// Try custom resource validation first if schema registry is available
 			if schemaRegistry != nil {
 				isCustomResource, err := schemaRegistry.ValidateCustomResource(manifest)
@@ -524,7 +524,7 @@ func validateKubernetesManifestsWithOutput(directory string, schemaRegistry *Sch
 					continue
 				}
 			}
-			
+
 			// Basic validation - check if it's a valid Kubernetes resource
 			if err := validateKubernetesResource(manifest); err != nil {
 				k8sErrors++
@@ -535,7 +535,7 @@ func validateKubernetesManifestsWithOutput(directory string, schemaRegistry *Sch
 			}
 		}
 	}
-	
+
 	if k8sValidated > 0 {
 		summary := fmt.Sprintf("Kubernetes schema validation - %d manifest(s) validated successfully", k8sValidated)
 		if customResourcesValidated > 0 {
@@ -543,37 +543,37 @@ func validateKubernetesManifestsWithOutput(directory string, schemaRegistry *Sch
 		}
 		outputOpts.PrintResult(summary)
 	}
-	
+
 	return k8sErrors == 0
 }
 
 func validateKubernetesManifests(directory string, schemaRegistry *SchemaRegistry) bool {
 	fmt.Printf("Validating Kubernetes manifests in %s...\n", directory)
-	
+
 	// Find YAML files
 	yamlFiles, err := filepath.Glob(filepath.Join(directory, "*.yaml"))
 	if err != nil {
 		fmt.Printf("ERROR: Error finding YAML files: %v\n", err)
 		return false
 	}
-	
+
 	ymlFiles, err := filepath.Glob(filepath.Join(directory, "*.yml"))
 	if err != nil {
 		fmt.Printf("ERROR: Error finding YML files: %v\n", err)
 		return false
 	}
-	
+
 	allFiles := append(yamlFiles, ymlFiles...)
-	
+
 	if len(allFiles) == 0 {
 		fmt.Printf("ℹ No YAML files found in %s for Kubernetes validation\n", directory)
 		return true
 	}
-	
+
 	k8sErrors := 0
 	k8sValidated := 0
 	customResourcesValidated := 0
-	
+
 	for _, yamlFile := range allFiles {
 		content, err := os.ReadFile(yamlFile)
 		if err != nil {
@@ -581,41 +581,41 @@ func validateKubernetesManifests(directory string, schemaRegistry *SchemaRegistr
 			k8sErrors++
 			continue
 		}
-		
+
 		// Split by document separator
 		documents := strings.Split(string(content), "\n---\n")
-		
+
 		for i, doc := range documents {
 			doc = strings.TrimSpace(doc)
 			if doc == "" {
 				continue
 			}
-			
+
 			var manifest map[string]interface{}
 			if err := yaml.Unmarshal([]byte(doc), &manifest); err != nil {
 				fmt.Printf("ERROR: %s - YAML parsing error: %v\n", filepath.Base(yamlFile), err)
 				k8sErrors++
 				continue
 			}
-			
+
 			if manifest == nil {
 				continue
 			}
-			
+
 			// Check if it looks like a Kubernetes manifest
 			_, hasAPIVersion := manifest["apiVersion"]
 			kind, hasKind := manifest["kind"]
-			
+
 			if !hasAPIVersion || !hasKind {
 				fmt.Printf("ℹ %s - Not a Kubernetes manifest (missing apiVersion/kind)\n", filepath.Base(yamlFile))
 				continue
 			}
-			
+
 			docInfo := ""
 			if len(documents) > 1 {
 				docInfo = fmt.Sprintf("[doc %d]", i+1)
 			}
-			
+
 			// Try custom resource validation first if schema registry is available
 			if schemaRegistry != nil {
 				isCustomResource, err := schemaRegistry.ValidateCustomResource(manifest)
@@ -631,7 +631,7 @@ func validateKubernetesManifests(directory string, schemaRegistry *SchemaRegistr
 					continue
 				}
 			}
-			
+
 			// Basic validation - check if it's a valid Kubernetes resource
 			if err := validateKubernetesResource(manifest); err != nil {
 				k8sErrors++
@@ -642,7 +642,7 @@ func validateKubernetesManifests(directory string, schemaRegistry *SchemaRegistr
 			}
 		}
 	}
-	
+
 	if k8sValidated > 0 {
 		fmt.Printf("SUCCESS: Kubernetes validation: %d manifest(s) validated successfully", k8sValidated)
 		if customResourcesValidated > 0 {
@@ -650,7 +650,7 @@ func validateKubernetesManifests(directory string, schemaRegistry *SchemaRegistr
 		}
 		fmt.Println()
 	}
-	
+
 	return k8sErrors == 0
 }
 
@@ -661,25 +661,25 @@ func validateKubernetesResource(manifest map[string]interface{}) error {
 	if !ok {
 		return fmt.Errorf("apiVersion must be a string")
 	}
-	
+
 	kind, ok := manifest["kind"].(string)
 	if !ok {
 		return fmt.Errorf("kind must be a string")
 	}
-	
+
 	// Parse the apiVersion to get group and version
 	gv, err := schema.ParseGroupVersion(apiVersionStr)
 	if err != nil {
 		return fmt.Errorf("invalid apiVersion: %w", err)
 	}
-	
+
 	// Check if it's a known Kubernetes resource type
 	gvk := schema.GroupVersionKind{
 		Group:   gv.Group,
 		Version: gv.Version,
 		Kind:    kind,
 	}
-	
+
 	// Try to find the resource in the scheme
 	_, err = scheme.Scheme.New(gvk)
 	if err != nil {
@@ -687,7 +687,7 @@ func validateKubernetesResource(manifest map[string]interface{}) error {
 		// We'll just do basic structure validation
 		return validateBasicStructure(manifest)
 	}
-	
+
 	return nil
 }
 
@@ -697,22 +697,22 @@ func validateBasicStructure(manifest map[string]interface{}) error {
 	if _, ok := manifest["metadata"]; !ok {
 		return fmt.Errorf("metadata field is required")
 	}
-	
+
 	metadata, ok := manifest["metadata"].(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("metadata must be an object")
 	}
-	
+
 	// Check for name in metadata (most resources require it)
 	if _, ok := metadata["name"]; !ok {
 		return fmt.Errorf("metadata.name is required")
 	}
-	
+
 	// Check that name is a string
 	if _, ok := metadata["name"].(string); !ok {
 		return fmt.Errorf("metadata.name must be a string")
 	}
-	
+
 	return nil
 }
 
@@ -721,36 +721,36 @@ func loadSchemasFromEnvironment(environment, configDir string) (*SchemaRegistry,
 	if environment == "" || configDir == "" {
 		return nil, fmt.Errorf("environment and config directory are required")
 	}
-	
+
 	// Create a temporary MikoManifest to load the config
 	tempOptions := BuildOptions{
 		Environment: environment,
 		ConfigDir:   configDir,
 	}
 	mikoManifest := New(tempOptions)
-	
+
 	// Load configuration
 	config, err := mikoManifest.LoadConfig(environment)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load environment config: %w", err)
 	}
-	
+
 	// If no schemas defined, return nil
 	if len(config.Schemas) == 0 {
 		return nil, nil
 	}
-	
+
 	// Create schema registry and load schemas
 	schemaRegistry := NewSchemaRegistry()
-	
+
 	// Create a temporary SchemaConfig structure for compatibility
 	schemaConfig := &SchemaConfig{
 		Schemas: config.Schemas,
 	}
-	
+
 	if err := schemaRegistry.LoadSchemas(schemaConfig); err != nil {
 		return nil, fmt.Errorf("failed to load schemas from environment config: %w", err)
 	}
-	
+
 	return schemaRegistry, nil
 }

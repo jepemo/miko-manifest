@@ -25,10 +25,10 @@ valid before running 'build'. It validates:
 	Run: func(cmd *cobra.Command, args []string) {
 		outputOpts := output.NewOutputOptions(checkVerbose)
 		options := mikomanifest.CheckOptions{
-			ConfigDir:    checkConfigDir,
-			OutputOpts:   outputOpts,
+			ConfigDir:  checkConfigDir,
+			OutputOpts: outputOpts,
 		}
-		
+
 		if err := mikomanifest.CheckConfigDirectory(options); err != nil {
 			fmt.Printf("Error checking config directory: %v\n", err)
 			os.Exit(1)

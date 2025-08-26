@@ -14,31 +14,31 @@ type InitOptions struct {
 // InitProject initializes a new miko-manifest project
 func InitProject(options InitOptions) error {
 	fmt.Println("Initializing miko-manifest project...")
-	
+
 	// Create templates directory
 	templatesDir := filepath.Join(options.ProjectDir, "templates")
 	if err := os.MkdirAll(templatesDir, 0755); err != nil {
 		return fmt.Errorf("failed to create templates directory: %w", err)
 	}
 	fmt.Printf("✓ Created directory: %s\n", templatesDir)
-	
+
 	// Create config directory
 	configDir := filepath.Join(options.ProjectDir, "config")
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 	fmt.Printf("✓ Created directory: %s\n", configDir)
-	
+
 	// Create template files
 	if err := createTemplateFiles(templatesDir); err != nil {
 		return err
 	}
-	
+
 	// Create configuration file
 	if err := createConfigFile(configDir); err != nil {
 		return err
 	}
-	
+
 	fmt.Println("SUCCESS: miko-manifest project initialized successfully!")
 	fmt.Println("")
 	fmt.Println("Example templates created:")
@@ -54,7 +54,7 @@ func InitProject(options InitOptions) error {
 	fmt.Println("   • output/configmap.yaml (with 2 sections)")
 	fmt.Println("   • output/service-frontend.yaml")
 	fmt.Println("   • output/service-backend.yaml")
-	
+
 	return nil
 }
 
@@ -85,13 +85,13 @@ spec:
             - name: ENVIRONMENT
               value: "{{.environment}}"
 `
-	
+
 	deploymentPath := filepath.Join(templatesDir, "deployment.yaml")
 	if err := os.WriteFile(deploymentPath, []byte(deploymentContent), 0644); err != nil {
 		return fmt.Errorf("failed to create deployment.yaml: %w", err)
 	}
 	fmt.Printf("✓ Created template file: %s\n", deploymentPath)
-	
+
 	// Create configmap.yaml template
 	configmapContent := `---
 apiVersion: v1
@@ -103,13 +103,13 @@ data:
   database_url: "{{.database_url}}"
   redis_url: "{{.redis_url}}"
 `
-	
+
 	configmapPath := filepath.Join(templatesDir, "configmap.yaml")
 	if err := os.WriteFile(configmapPath, []byte(configmapContent), 0644); err != nil {
 		return fmt.Errorf("failed to create configmap.yaml: %w", err)
 	}
 	fmt.Printf("✓ Created template file: %s\n", configmapPath)
-	
+
 	// Create service.yaml template
 	serviceContent := `---
 apiVersion: v1
@@ -124,13 +124,13 @@ spec:
     - port: {{.service_port}}
       targetPort: {{.target_port}}
 `
-	
+
 	servicePath := filepath.Join(templatesDir, "service.yaml")
 	if err := os.WriteFile(servicePath, []byte(serviceContent), 0644); err != nil {
 		return fmt.Errorf("failed to create service.yaml: %w", err)
 	}
 	fmt.Printf("✓ Created template file: %s\n", servicePath)
-	
+
 	return nil
 }
 
@@ -212,13 +212,13 @@ include:
           - name: target_port
             value: "3000"
 `
-	
+
 	devConfigPath := filepath.Join(configDir, "dev.yaml")
 	if err := os.WriteFile(devConfigPath, []byte(devConfigContent), 0644); err != nil {
 		return fmt.Errorf("failed to create dev.yaml: %w", err)
 	}
 	fmt.Printf("✓ Created configuration file: %s\n", devConfigPath)
-	
+
 	// Create example schema configuration file
 	schemaConfigContent := `---
 # Schema configuration for custom resource validation
@@ -241,12 +241,12 @@ schemas:
 # Note: Uncomment the schemas you need for your project
 # Schemas defined here will be inherited by any config that includes this file via 'resources'
 `
-	
+
 	schemaConfigPath := filepath.Join(configDir, "schemas.yaml")
 	if err := os.WriteFile(schemaConfigPath, []byte(schemaConfigContent), 0644); err != nil {
 		return fmt.Errorf("failed to create schemas.yaml: %w", err)
 	}
 	fmt.Printf("✓ Created schema configuration file: %s\n", schemaConfigPath)
-	
+
 	return nil
 }

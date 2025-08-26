@@ -146,7 +146,7 @@ func displayFullConfig(config *mikomanifest.Config, outputOpts *output.OutputOpt
 		resourceCount := len(config.Resources)
 		variableCount := len(config.Variables)
 		includeCount := len(config.Include)
-		outputOpts.PrintSummary(fmt.Sprintf("Configuration summary: %d resource(s), %d variable(s), %d include(s)", 
+		outputOpts.PrintSummary(fmt.Sprintf("Configuration summary: %d resource(s), %d variable(s), %d include(s)",
 			resourceCount, variableCount, includeCount))
 	}
 
@@ -156,15 +156,15 @@ func displayFullConfig(config *mikomanifest.Config, outputOpts *output.OutputOpt
 func displayConfigTreeWithLoading(configDir, environment string, outputOpts *output.OutputOptions) error {
 	outputOpts.PrintStep(fmt.Sprintf("Loading configuration hierarchy for environment: %s", environment))
 	outputOpts.PrintInfo(fmt.Sprintf("Config directory: %s", configDir))
-	
+
 	// Load configuration with tree display enabled to show the loading process
 	config, err := mikomanifest.LoadConfigWithOutput(configDir, environment, true, outputOpts)
 	if err != nil {
 		return fmt.Errorf("failed to load configuration: %v", err)
 	}
-	
+
 	outputOpts.PrintInfo(fmt.Sprintf("Configuration hierarchy for environment: %s", environment))
-	
+
 	// Then show the tree structure
 	return displayConfigTree(config, outputOpts)
 }
@@ -172,8 +172,8 @@ func displayConfigTreeWithLoading(configDir, environment string, outputOpts *out
 func displayConfigTree(config *mikomanifest.Config, outputOpts *output.OutputOptions) error {
 	outputOpts.PrintInfo("CONFIG TREE:\n")
 	fmt.Printf("%s.yaml\n", config.Environment)
-	
-	// Show resources if they exist  
+
+	// Show resources if they exist
 	if len(config.Resources) > 0 {
 		fmt.Println("|-- resources:")
 		for i, resource := range config.Resources {
@@ -184,7 +184,7 @@ func displayConfigTree(config *mikomanifest.Config, outputOpts *output.OutputOpt
 			}
 		}
 	}
-	
+
 	// Show variables
 	if len(config.Variables) > 0 {
 		fmt.Println("|-- variables:")
@@ -196,7 +196,7 @@ func displayConfigTree(config *mikomanifest.Config, outputOpts *output.OutputOpt
 			}
 		}
 	}
-	
+
 	// Show includes
 	if len(config.Include) > 0 {
 		fmt.Println("|-- templates:")
@@ -245,11 +245,11 @@ func displaySchemas(config *mikomanifest.Config, outputOpts *output.OutputOption
 
 	// Load schema configuration if it exists
 	schemaPath := filepath.Join(config.ConfigDir, "schemas.yaml")
-	
+
 	if outputOpts.Verbose {
 		outputOpts.PrintInfo(fmt.Sprintf("Looking for schemas in: %s", schemaPath))
 	}
-	
+
 	schemaConfig, err := mikomanifest.LoadSchemaConfig(schemaPath)
 	if err != nil {
 		outputOpts.PrintWarning("Schema loading", fmt.Sprintf("No schemas configured or error loading schemas: %v", err))
@@ -264,7 +264,7 @@ func displaySchemas(config *mikomanifest.Config, outputOpts *output.OutputOption
 	if outputOpts.Verbose {
 		outputOpts.PrintInfo(fmt.Sprintf("Found %d schema(s) for environment: %s", len(schemaConfig.Schemas), config.Environment))
 	}
-	
+
 	fmt.Printf("\nSCHEMAS:\n")
 	for _, schema := range schemaConfig.Schemas {
 		fmt.Printf("|-- %s\n", schema)

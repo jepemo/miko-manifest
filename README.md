@@ -3,7 +3,9 @@
 [![Release](https://img.shields.io/github/v/release/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/jepemo/miko-manifest/ci-cd.yml)](https://github.com/jepemo/miko-manifest/actions)
 [![CodeQL](https://github.com/jepemo/miko-manifest/actions/workflows/codeql.yml/badge.svg)](https://github.com/jepemo/miko-manifest/actions/workflows/codeql.yml)
-[![Go Report](https://goreportcard.com/badge/github.com/jepemo/miko-manifest)](https://goreportcard.com/report/github.com/jepemo/miko-manifest)
+
+<!-- [![Go Report](https://goreportcard.com/badge/github.com/jepemo/miko-manifest)](https://goreportcard.com/report/github.com/jepemo/miko-manifest) -->
+
 [![Go Version](https://img.shields.io/github/go-mod/go-version/jepemo/miko-manifest)](https://github.com/jepemo/miko-manifest/blob/main/go.mod)
 [![License](https://img.shields.io/github/license/jepemo/miko-manifest)](LICENSE)
 

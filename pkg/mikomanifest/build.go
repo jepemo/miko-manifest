@@ -13,8 +13,8 @@ import (
 
 // Config represents the configuration structure
 type Config struct {
-	Environment string     `yaml:"-"`           // Not serialized, set programmatically
-	ConfigDir   string     `yaml:"-"`           // Not serialized, set programmatically
+	Environment string     `yaml:"-"` // Not serialized, set programmatically
+	ConfigDir   string     `yaml:"-"` // Not serialized, set programmatically
 	Resources   []string   `yaml:"resources,omitempty"`
 	Schemas     []string   `yaml:"schemas,omitempty"`
 	Variables   []Variable `yaml:"variables"`
@@ -29,9 +29,9 @@ type Variable struct {
 
 // Include represents a file to include in the build
 type Include struct {
-	File   string      `yaml:"file"`
-	Repeat string      `yaml:"repeat,omitempty"`
-	List   []ListItem  `yaml:"list,omitempty"`
+	File   string     `yaml:"file"`
+	Repeat string     `yaml:"repeat,omitempty"`
+	List   []ListItem `yaml:"list,omitempty"`
 }
 
 // ListItem represents an item in a repeat list
@@ -42,12 +42,12 @@ type ListItem struct {
 
 // BuildOptions contains options for building
 type BuildOptions struct {
-	Environment     string
-	OutputDir       string
-	ConfigDir       string
-	TemplatesDir    string
-	Variables       map[string]string
-	OutputOpts      *output.OutputOptions
+	Environment  string
+	OutputDir    string
+	ConfigDir    string
+	TemplatesDir string
+	Variables    map[string]string
+	OutputOpts   *output.OutputOptions
 }
 
 // MikoManifest is the main library interface
@@ -107,50 +107,50 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 	if depth > maxDepth {
 		return nil, fmt.Errorf("maximum recursion depth (%d) exceeded when loading %s", maxDepth, configPath)
 	}
-	
+
 	// Check for circular dependencies
 	for _, loaded := range loadChain {
 		if loaded == configPath {
 			return nil, fmt.Errorf("circular dependency detected: %s is already in load chain %v", configPath, loadChain)
 		}
 	}
-	
+
 	// Add current config to the load chain
 	currentChain := append(loadChain, configPath)
-	
+
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("configuration file %s not found", configPath)
 	}
-	
+
 	if showTree && outputOpts != nil {
 		outputOpts.PrintInfo(fmt.Sprintf("Loading: %s", configPath))
 	}
-	
+
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file %s: %w", configPath, err)
 	}
-	
+
 	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML in %s: %w", configPath, err)
 	}
-	
+
 	// Process resources if they exist
 	if len(config.Resources) > 0 {
 		if showTree && outputOpts != nil {
 			outputOpts.PrintInfo(fmt.Sprintf("Processing %d resource(s):", len(config.Resources)))
 		}
-		
+
 		baseConfig := &Config{
 			Variables: []Variable{},
 			Include:   []Include{},
 		}
-		
+
 		// Load and merge all resources
 		for _, resource := range config.Resources {
 			resourcePath := m.resolveResourcePath(configPath, resource)
-			
+
 			if showTree && outputOpts != nil {
 				if isDirectory(resourcePath) {
 					outputOpts.PrintInfo(fmt.Sprintf("Resource: %s (directory)", resource))
@@ -158,7 +158,7 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 					outputOpts.PrintInfo(fmt.Sprintf("Resource: %s", resource))
 				}
 			}
-			
+
 			if isDirectory(resourcePath) {
 				// Load all YAML files from directory in alphabetical order
 				if err := m.loadConfigFromDirectory(resourcePath, baseConfig, currentChain, depth+1, showTree, outputOpts); err != nil {
@@ -173,47 +173,47 @@ func (m *MikoManifest) LoadConfigWithResources(configPath string, loadChain []st
 				*baseConfig = *m.mergeConfigs(baseConfig, resourceConfig)
 			}
 		}
-		
+
 		// Merge current config with the base config (current config has higher priority)
 		config = *m.mergeConfigs(baseConfig, &config)
 	}
-	
+
 	return &config, nil
 }
 
 // ValidateTemplateFiles checks that all template files exist
 func (m *MikoManifest) ValidateTemplateFiles(includes []Include) error {
 	templatesPath := m.options.TemplatesDir
-	
+
 	for _, include := range includes {
 		templatePath := filepath.Join(templatesPath, include.File)
 		if _, err := os.Stat(templatePath); os.IsNotExist(err) {
 			return fmt.Errorf("template file %s not found", templatePath)
 		}
 	}
-	
+
 	return nil
 }
 
 // MergeVariables merges global and local variables
 func (m *MikoManifest) MergeVariables(globalVars []Variable, localVars []Variable, cmdVars map[string]string) map[string]string {
 	variables := make(map[string]string)
-	
+
 	// Add global variables
 	for _, v := range globalVars {
 		variables[v.Name] = v.Value
 	}
-	
+
 	// Add local variables (override global if same name)
 	for _, v := range localVars {
 		variables[v.Name] = v.Value
 	}
-	
+
 	// Add command line variables (highest priority)
 	for k, v := range cmdVars {
 		variables[k] = v
 	}
-	
+
 	return variables
 }
 
@@ -223,12 +223,12 @@ func (m *MikoManifest) RenderTemplate(templateContent string, variables map[stri
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template %s: %w", templateName, err)
 	}
-	
+
 	var result strings.Builder
 	if err := tmpl.Execute(&result, variables); err != nil {
 		return "", fmt.Errorf("failed to execute template %s: %w", templateName, err)
 	}
-	
+
 	return result.String(), nil
 }
 
@@ -238,22 +238,22 @@ func (m *MikoManifest) ProcessSimpleFile(templatePath, outputDir string, variabl
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", templatePath, err)
 	}
-	
+
 	rendered, err := m.RenderTemplate(string(content), variables, filepath.Base(templatePath))
 	if err != nil {
 		return err
 	}
-	
+
 	// Ensure content ends with newline
 	if !strings.HasSuffix(rendered, "\n") {
 		rendered += "\n"
 	}
-	
+
 	outputFile := filepath.Join(outputDir, filepath.Base(templatePath))
 	if err := os.WriteFile(outputFile, []byte(rendered), 0644); err != nil {
 		return fmt.Errorf("failed to write output file %s: %w", outputFile, err)
 	}
-	
+
 	outputOpts.PrintProcessed(filepath.Base(templatePath), filepath.Base(outputFile), "")
 	return nil
 }
@@ -264,9 +264,9 @@ func (m *MikoManifest) ProcessSameFileRepeat(templatePath, outputDir string, glo
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", templatePath, err)
 	}
-	
+
 	var renderedParts []string
-	
+
 	for _, item := range listItems {
 		// Merge global variables with item-specific values
 		variables := make(map[string]string)
@@ -276,29 +276,29 @@ func (m *MikoManifest) ProcessSameFileRepeat(templatePath, outputDir string, glo
 		for _, v := range item.Values {
 			variables[v.Name] = v.Value
 		}
-		
+
 		rendered, err := m.RenderTemplate(string(content), variables, fmt.Sprintf("%s[%s]", filepath.Base(templatePath), item.Key))
 		if err != nil {
 			return err
 		}
-		
+
 		renderedParts = append(renderedParts, rendered)
 	}
-	
+
 	// Join all parts with separator
 	// Since each rendered part starts with "---", we only need a newline separator
 	finalContent := strings.Join(renderedParts, "\n")
-	
+
 	// Ensure content ends with newline
 	if !strings.HasSuffix(finalContent, "\n") {
 		finalContent += "\n"
 	}
-	
+
 	outputFile := filepath.Join(outputDir, filepath.Base(templatePath))
 	if err := os.WriteFile(outputFile, []byte(finalContent), 0644); err != nil {
 		return fmt.Errorf("failed to write output file %s: %w", outputFile, err)
 	}
-	
+
 	outputOpts.PrintProcessed(filepath.Base(templatePath), filepath.Base(outputFile), fmt.Sprintf("%d sections", len(listItems)))
 	return nil
 }
@@ -309,11 +309,11 @@ func (m *MikoManifest) ProcessMultipleFilesRepeat(templatePath, outputDir string
 	if err != nil {
 		return fmt.Errorf("failed to read template %s: %w", templatePath, err)
 	}
-	
+
 	filename := filepath.Base(templatePath)
 	ext := filepath.Ext(filename)
 	stem := strings.TrimSuffix(filename, ext)
-	
+
 	for _, item := range listItems {
 		// Merge global variables with item-specific values
 		variables := make(map[string]string)
@@ -323,27 +323,27 @@ func (m *MikoManifest) ProcessMultipleFilesRepeat(templatePath, outputDir string
 		for _, v := range item.Values {
 			variables[v.Name] = v.Value
 		}
-		
+
 		rendered, err := m.RenderTemplate(string(content), variables, fmt.Sprintf("%s[%s]", filename, item.Key))
 		if err != nil {
 			return err
 		}
-		
+
 		// Ensure content ends with newline
 		if !strings.HasSuffix(rendered, "\n") {
 			rendered += "\n"
 		}
-		
+
 		outputFilename := fmt.Sprintf("%s-%s%s", stem, item.Key, ext)
 		outputFile := filepath.Join(outputDir, outputFilename)
-		
+
 		if err := os.WriteFile(outputFile, []byte(rendered), 0644); err != nil {
 			return fmt.Errorf("failed to write output file %s: %w", outputFile, err)
 		}
-		
+
 		outputOpts.PrintProcessed(filename, outputFilename, "multi-file")
 	}
-	
+
 	return nil
 }
 
@@ -360,40 +360,40 @@ func (m *MikoManifest) Build() error {
 	outputOpts.PrintStep(fmt.Sprintf("Building miko-manifest project with environment: %s", m.options.Environment))
 	outputOpts.PrintInfo(fmt.Sprintf("Using config directory: %s", m.options.ConfigDir))
 	outputOpts.PrintInfo(fmt.Sprintf("Using templates directory: %s", m.options.TemplatesDir))
-	
+
 	// Validate directories
 	if err := m.validateDirectories(); err != nil {
 		return err
 	}
-	
+
 	// Load configuration
 	config, err := m.LoadConfig(m.options.Environment)
 	if err != nil {
 		return err
 	}
-	
+
 	if len(config.Include) == 0 {
 		return fmt.Errorf("no 'include' section found in configuration")
 	}
-	
+
 	// Check that all template files exist
 	if err := m.ValidateTemplateFiles(config.Include); err != nil {
 		return err
 	}
-	
+
 	// Create output directory
 	if err := os.MkdirAll(m.options.OutputDir, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory %s: %w", m.options.OutputDir, err)
 	}
 	outputOpts.PrintInfo(fmt.Sprintf("Output directory: %s", m.options.OutputDir))
-	
+
 	// Get global variables and merge with command line overrides
 	globalVariables := m.MergeVariables(config.Variables, nil, m.options.Variables)
-	
+
 	// Process each file in include
 	for _, include := range config.Include {
 		templatePath := filepath.Join(m.options.TemplatesDir, include.File)
-		
+
 		switch include.Repeat {
 		case "":
 			// Simple file include
@@ -414,12 +414,12 @@ func (m *MikoManifest) Build() error {
 			return fmt.Errorf("unknown repeat type: %s", include.Repeat)
 		}
 	}
-	
+
 	// Save environment info for auto-detection during lint
 	if err := m.saveEnvironmentInfo(); err != nil {
 		outputOpts.PrintWarning("environment-info", fmt.Sprintf("Failed to save environment info: %v", err))
 	}
-	
+
 	outputOpts.PrintSummary("Build completed successfully!")
 	return nil
 }
@@ -435,7 +435,7 @@ func (m *MikoManifest) validateDirectories() error {
 	} else if !stat.IsDir() {
 		return fmt.Errorf("%s is not a directory", m.options.TemplatesDir)
 	}
-	
+
 	// Check config directory
 	if stat, err := os.Stat(m.options.ConfigDir); err != nil {
 		if os.IsNotExist(err) {
@@ -445,7 +445,7 @@ func (m *MikoManifest) validateDirectories() error {
 	} else if !stat.IsDir() {
 		return fmt.Errorf("%s is not a directory", m.options.ConfigDir)
 	}
-	
+
 	return nil
 }
 
@@ -454,7 +454,7 @@ func (m *MikoManifest) resolveResourcePath(configPath, resourcePath string) stri
 	if filepath.IsAbs(resourcePath) {
 		return resourcePath
 	}
-	
+
 	configDir := filepath.Dir(configPath)
 	return filepath.Join(configDir, resourcePath)
 }
@@ -471,20 +471,20 @@ func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Confi
 	if err != nil {
 		return fmt.Errorf("failed to read directory %s: %w", dirPath, err)
 	}
-	
+
 	// Filter and sort YAML files
 	var yamlFiles []string
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		
+
 		name := entry.Name()
 		if strings.HasSuffix(name, ".yaml") || strings.HasSuffix(name, ".yml") {
 			yamlFiles = append(yamlFiles, filepath.Join(dirPath, name))
 		}
 	}
-	
+
 	// Process files in alphabetical order (already sorted by ReadDir)
 	for _, yamlFile := range yamlFiles {
 		resourceConfig, err := m.LoadConfigWithResources(yamlFile, loadChain, depth, showTree, outputOpts)
@@ -493,7 +493,7 @@ func (m *MikoManifest) loadConfigFromDirectory(dirPath string, baseConfig *Confi
 		}
 		*baseConfig = *m.mergeConfigs(baseConfig, resourceConfig)
 	}
-	
+
 	return nil
 }
 
@@ -504,20 +504,20 @@ func (m *MikoManifest) mergeConfigs(base, override *Config) *Config {
 		Include:   make([]Include, 0),
 		Schemas:   make([]string, 0),
 	}
-	
+
 	// Create a map for easier variable merging
 	variableMap := make(map[string]string)
-	
+
 	// Add base variables
 	for _, v := range base.Variables {
 		variableMap[v.Name] = v.Value
 	}
-	
+
 	// Override with variables from override config
 	for _, v := range override.Variables {
 		variableMap[v.Name] = v.Value
 	}
-	
+
 	// Convert back to slice
 	for name, value := range variableMap {
 		result.Variables = append(result.Variables, Variable{
@@ -525,10 +525,10 @@ func (m *MikoManifest) mergeConfigs(base, override *Config) *Config {
 			Value: value,
 		})
 	}
-	
+
 	// Merge schemas (no duplicates)
 	schemaSet := make(map[string]bool)
-	
+
 	// Add base schemas
 	for _, schema := range base.Schemas {
 		if !schemaSet[schema] {
@@ -536,7 +536,7 @@ func (m *MikoManifest) mergeConfigs(base, override *Config) *Config {
 			schemaSet[schema] = true
 		}
 	}
-	
+
 	// Add override schemas
 	for _, schema := range override.Schemas {
 		if !schemaSet[schema] {
@@ -544,27 +544,27 @@ func (m *MikoManifest) mergeConfigs(base, override *Config) *Config {
 			schemaSet[schema] = true
 		}
 	}
-	
+
 	// Merge includes (no duplicates based on file+key combination)
 	includeMap := make(map[string]Include)
-	
+
 	// Add base includes
 	for _, inc := range base.Include {
 		key := m.getIncludeKey(inc)
 		includeMap[key] = inc
 	}
-	
+
 	// Add override includes (may override base includes)
 	for _, inc := range override.Include {
 		key := m.getIncludeKey(inc)
 		includeMap[key] = inc
 	}
-	
+
 	// Convert back to slice
 	for _, inc := range includeMap {
 		result.Include = append(result.Include, inc)
 	}
-	
+
 	return result
 }
 
@@ -591,10 +591,10 @@ func loadEnvironmentInfo(outputDir string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	
+
 	lines := strings.Split(string(data), "\n")
 	var env, configDir string
-	
+
 	for _, line := range lines {
 		if strings.HasPrefix(line, "environment: ") {
 			env = strings.TrimSpace(strings.TrimPrefix(line, "environment: "))
@@ -602,6 +602,6 @@ func loadEnvironmentInfo(outputDir string) (string, string, error) {
 			configDir = strings.TrimSpace(strings.TrimPrefix(line, "config_dir: "))
 		}
 	}
-	
+
 	return env, configDir, nil
 }

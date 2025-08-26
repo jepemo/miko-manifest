@@ -194,12 +194,12 @@ func (sr *SchemaRegistry) loadFromContent(content, source string) (int, error) {
 		if crd != nil {
 			sr.registerCRD(crd)
 			loadedCount++
-			
+
 			docInfo := ""
 			if len(documents) > 1 {
 				docInfo = fmt.Sprintf(" [doc %d]", i+1)
 			}
-			fmt.Printf("✓ Registered CRD: %s/%s%s from %s\n", 
+			fmt.Printf("✓ Registered CRD: %s/%s%s from %s\n",
 				crd.Spec.Group, crd.Spec.Names.Kind, docInfo, source)
 		}
 	}

@@ -18,11 +18,11 @@ var initCmd = &cobra.Command{
 			fmt.Printf("Error getting working directory: %v\n", err)
 			os.Exit(1)
 		}
-		
+
 		options := mikomanifest.InitOptions{
 			ProjectDir: workingDir,
 		}
-		
+
 		if err := mikomanifest.InitProject(options); err != nil {
 			fmt.Printf("Error initializing project: %v\n", err)
 			os.Exit(1)

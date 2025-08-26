@@ -41,7 +41,7 @@ func init() {
 	// Add version flag
 	var versionFlag bool
 	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
-	
+
 	// Handle version flag before command execution
 	rootCmd.PreRun = func(cmd *cobra.Command, args []string) {
 		if versionFlag {

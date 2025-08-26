@@ -11,13 +11,13 @@ import (
 )
 
 var (
-	buildEnv           string
-	buildOutputDir     string
-	buildConfigDir     string
-	buildTemplatesDir  string
-	buildVariables     []string
-	buildValidate      bool
-	buildVerbose       bool
+	buildEnv          string
+	buildOutputDir    string
+	buildConfigDir    string
+	buildTemplatesDir string
+	buildVariables    []string
+	buildValidate     bool
+	buildVerbose      bool
 )
 
 var buildCmd = &cobra.Command{
@@ -30,7 +30,7 @@ Use --validate flag to automatically validate generated manifests after build.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Create output options
 		outputOpts := &output.OutputOptions{Verbose: buildVerbose}
-		
+
 		// Parse command line variables
 		cmdVariables := make(map[string]string)
 		for _, varPair := range buildVariables {
@@ -42,22 +42,22 @@ Use --validate flag to automatically validate generated manifests after build.`,
 			cmdVariables[parts[0]] = parts[1]
 			outputOpts.PrintInfo(fmt.Sprintf("Override variable: %s=%s", parts[0], parts[1]))
 		}
-		
+
 		options := mikomanifest.BuildOptions{
-			Environment:     buildEnv,
-			OutputDir:       buildOutputDir,
-			ConfigDir:       buildConfigDir,
-			TemplatesDir:    buildTemplatesDir,
-			Variables:       cmdVariables,
-			OutputOpts:      outputOpts,
+			Environment:  buildEnv,
+			OutputDir:    buildOutputDir,
+			ConfigDir:    buildConfigDir,
+			TemplatesDir: buildTemplatesDir,
+			Variables:    cmdVariables,
+			OutputOpts:   outputOpts,
 		}
-		
+
 		mikoManifest := mikomanifest.New(options)
 		if err := mikoManifest.Build(); err != nil {
 			outputOpts.PrintError("Build", fmt.Sprintf("Error building project: %v", err))
 			os.Exit(1)
 		}
-		
+
 		// Run validation if requested
 		if buildValidate {
 			outputOpts.PrintStep("Running validation")
@@ -67,7 +67,7 @@ Use --validate flag to automatically validate generated manifests after build.`,
 				ConfigDir:   buildConfigDir,
 				OutputOpts:  outputOpts,
 			}
-			
+
 			if err := mikomanifest.LintDirectory(lintOptions); err != nil {
 				outputOpts.PrintError("Validation", fmt.Sprintf("Error during validation: %v", err))
 				os.Exit(1)
@@ -84,7 +84,7 @@ func init() {
 	buildCmd.Flags().StringSliceVarP(&buildVariables, "var", "", []string{}, "Override variables in format: --var VAR_NAME=VALUE")
 	buildCmd.Flags().BoolVar(&buildValidate, "validate", false, "Run validation after build using schemas from environment config")
 	buildCmd.Flags().BoolVar(&buildVerbose, "verbose", false, "Show detailed build and validation information")
-	
+
 	// Mark required flags - ignore errors as they're only for documentation purposes
 	_ = buildCmd.MarkFlagRequired("env")
 	_ = buildCmd.MarkFlagRequired("output-dir")

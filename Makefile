@@ -17,7 +17,7 @@ GOMOD=$(GOCMD) mod
 GOFMT=$(GOCMD) fmt
 
 # Build targets
-.PHONY: all build clean clean-all test test-coverage test-race test-verbose deps fmt lint docker help
+.PHONY: all build clean clean-all test test-coverage test-race test-verbose deps fmt precommit lint docker help
 
 all: test build
 
@@ -66,6 +66,21 @@ deps:
 
 fmt:
 	$(GOFMT) ./...
+
+precommit:
+	@echo "Running pre-commit checks..."
+	@echo "1. Running go vet..."
+	$(GOCMD) vet ./...
+	@echo "2. Running go fmt..."
+	$(GOFMT) ./...
+	@echo "3. Applying gofmt -w (write changes)..."
+	gofmt -w .
+	@echo "4. Installing/running staticcheck..."
+	$(GOCMD) install honnef.co/go/tools/cmd/staticcheck@latest
+	$(HOME)/go/bin/staticcheck ./...
+	@echo "5. Running tests with coverage..."
+	$(GOTEST) -cover ./...
+	@echo "✅ All pre-commit checks passed!"
 
 lint:
 	golangci-lint run
@@ -127,6 +142,7 @@ help:
 	@echo "  test-short    - Run short tests only"
 	@echo "  deps          - Download dependencies"
 	@echo "  fmt           - Format code"
+	@echo "  precommit     - Run all pre-commit checks (vet, fmt, gofmt -w, staticcheck, test -cover)"
 	@echo "  lint          - Run linter"
 	@echo "  docker        - Build Docker image"
 	@echo "  docker-run    - Run Docker container"
