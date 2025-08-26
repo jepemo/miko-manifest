@@ -164,7 +164,7 @@ Run without local toolchain:
 # Check configuration
 docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest check
 
-# Build manifests  
+# Build manifests
 docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifest:latest build --env dev --output-dir output
 
 # Validate generated manifests
