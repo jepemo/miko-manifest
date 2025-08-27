@@ -47,6 +47,12 @@ go install github.com/jepemo/miko-manifest@latest
 docker pull ghcr.io/jepemo/miko-manifest:latest
 ```
 
+Check installation:
+
+```bash
+miko-manifest version
+```
+
 Scaffold a project:
 
 ```bash
@@ -145,6 +151,8 @@ Result: `output/deployment.yaml`
 | `check`    | Validate configuration YAML before build                  | `--verbose`                                       |
 | `build`    | Render templates into manifest files                      | `--var`, `--validate`, `--verbose`                |
 | `validate` | Validate generated manifests (YAML + schemas)             | `--env`, `--skip-schema-validation`, `--verbose`  |
+| `version`  | Show version, commit and build information                | –                                                 |
+| `version`  | Show version, commit hash, and build date                 | –                                                 |
 
 Complete flag descriptions: see [DOCS.md](DOCS.md).
 

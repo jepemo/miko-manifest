@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 )
 
@@ -38,19 +35,18 @@ func Execute() error {
 }
 
 func init() {
-	// Add version flag
-	var versionFlag bool
-	rootCmd.Flags().BoolVarP(&versionFlag, "version", "v", false, "Show version information")
+	// Set custom usage template to avoid showing [flags] when only help flag exists
+	rootCmd.SetUsageTemplate(`Usage:
+  {{.CommandPath}} [command]
 
-	// Handle version flag before command execution
-	rootCmd.PreRun = func(cmd *cobra.Command, args []string) {
-		if versionFlag {
-			fmt.Printf("miko-manifest version %s\n", version)
-			fmt.Printf("commit: %s\n", commit)
-			fmt.Printf("built: %s\n", date)
-			os.Exit(0)
-		}
-	}
+Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}
+
+Flags:
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
+
+Use "{{.CommandPath}} [command] --help" for more information about a command.
+`)
 
 	// Add all subcommands
 	rootCmd.AddCommand(initCmd)
@@ -58,4 +54,5 @@ func init() {
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(checkCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(versionCmd)
 }

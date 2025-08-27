@@ -115,7 +115,7 @@ docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifes
 miko-manifest --help
 ```
 
-You should see all subcommands (config, check, build, validate, init).
+You should see all subcommands (config, check, build, validate, init, version).
 
 #### Version Information
 
@@ -123,9 +123,7 @@ Check the installed version and build details:
 
 ```bash
 # Show version information
-miko-manifest --version
-# or
-miko-manifest -v
+miko-manifest version
 
 # Example output:
 # miko-manifest version 1.0.0
@@ -268,8 +266,7 @@ SUMMARY: All YAML configuration files are valid
 Get version, commit, and build information:
 
 ```bash
-miko-manifest --version
-miko-manifest -v
+miko-manifest version
 
 # Example output:
 # miko-manifest version 1.0.0
