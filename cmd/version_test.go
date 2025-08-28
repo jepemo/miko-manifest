@@ -59,7 +59,7 @@ func TestVersionCommand(t *testing.T) {
 			versionCmd.Run(versionCmd, []string{})
 
 			// Restore stdout and read captured output
-			w.Close()
+			_ = w.Close()
 			os.Stdout = oldStdout
 
 			var buf bytes.Buffer
