@@ -1,9 +1,9 @@
 package mikomanifest
 
 import (
-	"testing"
 	"os"
 	"path/filepath"
+	"testing"
 )
 
 func TestValidateWithKubernetesTypes(t *testing.T) {
