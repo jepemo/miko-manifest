@@ -132,12 +132,6 @@ dta:
 			} else if !tc.shouldFail && !success {
 				t.Errorf("Expected validation to pass for %s, but it failed", tc.name)
 			}
-
-			// If we expect a specific error, let's test the error message
-			if tc.shouldFail && tc.expectedError != "" {
-				// We should capture the error and check it contains the expected text
-				// For now, this is a basic test structure
-			}
 		})
 	}
 }
