@@ -525,11 +525,11 @@ spec:
 
 ### 7.2 Helpful Patterns
 
-| Need          | Pattern                                               |
-| ------------- | ----------------------------------------------------- | --------------------------------------------------- |
-| Default value | `{{ or .optional_var "default" }}`                    |
-| Uppercase     | `{{ .app_name                                         | upper }}` (add custom funcs by library integration) |
-| Join list     | `{{ join "," .listVar }}` (if custom func registered) |
+| Need          | Pattern                                                              |
+| ------------- | -------------------------------------------------------------------- |
+| Default value | `{{ or .optional_var "default" }}`                                   |
+| Uppercase     | `{{ .app_name \| upper }}` (add custom funcs by library integration) |
+| Join list     | `{{ join "," .listVar }}` (if custom func registered)                |
 
 ### 7.3 Debugging Templates
 

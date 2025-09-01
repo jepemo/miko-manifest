@@ -9,9 +9,56 @@ import (
 
 	"github.com/jepemo/miko-manifest/pkg/output"
 	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes/scheme"
+	k8syaml "sigs.k8s.io/yaml"
 )
+
+// cleanValidationError extracts the useful part from verbose JSON unmarshaling errors
+func cleanValidationError(err error) string {
+	errMsg := err.Error()
+	
+	// Extract just the unknown field from verbose JSON unmarshaling errors
+	// From: "error unmarshaling JSON: while decoding JSON: json: unknown field 'repicas'"
+	// To: "unknown field 'repicas'"
+	if strings.Contains(errMsg, "unknown field") {
+		// Find the part after "json: "
+		if idx := strings.LastIndex(errMsg, "json: "); idx != -1 {
+			return strings.TrimSpace(errMsg[idx+5:]) // Skip "json: " and trim spaces
+		}
+	}
+	
+	// Extract other common validation errors more cleanly
+	if strings.Contains(errMsg, "cannot unmarshal") {
+		// From: "json: cannot unmarshal string into Go struct field DeploymentSpec.spec.replicas of type int32"
+		// To: "invalid type for field 'replicas' (expected number, got string)"
+		if strings.Contains(errMsg, "Go struct field") && strings.Contains(errMsg, "of type") {
+			// Extract field name from "Go struct field Something.field"
+			parts := strings.Split(errMsg, "Go struct field ")
+			if len(parts) > 1 {
+				fieldPart := strings.Split(parts[1], " of type")
+				if len(fieldPart) > 1 {
+					fieldName := fieldPart[0]
+					if dotIdx := strings.LastIndex(fieldName, "."); dotIdx != -1 {
+						fieldName = fieldName[dotIdx+1:]
+					}
+					
+					// Determine expected type
+					if strings.Contains(errMsg, "of type int") {
+						return fmt.Sprintf("invalid type for field '%s' (expected number, got text)", fieldName)
+					} else if strings.Contains(errMsg, "of type bool") {
+						return fmt.Sprintf("invalid type for field '%s' (expected boolean, got text)", fieldName)
+					}
+				}
+			}
+		}
+	}
+	
+	// For other errors, return as-is but try to make them cleaner
+	return strings.TrimSpace(errMsg)
+}
 
 // LintOptions contains options for linting
 type LintOptions struct {
@@ -654,7 +701,7 @@ func validateKubernetesManifests(directory string, schemaRegistry *SchemaRegistr
 	return k8sErrors == 0
 }
 
-// validateKubernetesResource performs basic validation of a Kubernetes resource
+// validateKubernetesResource performs comprehensive validation using native Kubernetes types
 func validateKubernetesResource(manifest map[string]interface{}) error {
 	// Get apiVersion and kind
 	apiVersionStr, ok := manifest["apiVersion"].(string)
@@ -673,23 +720,123 @@ func validateKubernetesResource(manifest map[string]interface{}) error {
 		return fmt.Errorf("invalid apiVersion: %w", err)
 	}
 
-	// Check if it's a known Kubernetes resource type
+	// Create the GroupVersionKind
 	gvk := schema.GroupVersionKind{
 		Group:   gv.Group,
 		Version: gv.Version,
 		Kind:    kind,
 	}
 
-	// Try to find the resource in the scheme
-	_, err = scheme.Scheme.New(gvk)
+	// Convert manifest back to YAML for validation
+	yamlData, err := yaml.Marshal(manifest)
 	if err != nil {
-		// If not found in scheme, it might be a custom resource or newer API
-		// We'll just do basic structure validation
-		return validateBasicStructure(manifest)
+		return fmt.Errorf("failed to marshal manifest to YAML: %w", err)
+	}
+
+	// Use strict validation with native Kubernetes types
+	return validateWithKubernetesTypes(yamlData, gvk)
+}
+
+// validateWithKubernetesTypes validates YAML data against native Kubernetes types with strict decoding
+func validateWithKubernetesTypes(yamlData []byte, gvk schema.GroupVersionKind) error {
+	// Use specific validation for known types to avoid false positives
+	switch gvk.Kind {
+	case "Deployment":
+		if gvk.Group == "apps" && gvk.Version == "v1" {
+			return validateDeploymentWithNativeTypes(yamlData)
+		}
+	case "Service":
+		if gvk.Group == "" && gvk.Version == "v1" {
+			return validateServiceWithNativeTypes(yamlData)
+		}
+	case "ConfigMap":
+		if gvk.Group == "" && gvk.Version == "v1" {
+			return validateConfigMapWithNativeTypes(yamlData)
+		}
+	case "Secret":
+		if gvk.Group == "" && gvk.Version == "v1" {
+			return validateSecretWithNativeTypes(yamlData)
+		}
+	case "Pod":
+		if gvk.Group == "" && gvk.Version == "v1" {
+			return validatePodWithNativeTypes(yamlData)
+		}
+	}
+
+	// For other types, try to create using the scheme and do basic validation
+	_, err := scheme.Scheme.New(gvk)
+	if err != nil {
+		// If not found in scheme, it might be a custom resource
+		return validateBasicStructureFromYAML(yamlData)
+	}
+
+	// For known types in scheme but not specifically handled, do basic validation
+	return validateBasicStructureFromYAML(yamlData)
+}
+
+// validateDeploymentWithNativeTypes validates a Deployment using the complete appsv1.Deployment type
+func validateDeploymentWithNativeTypes(yamlData []byte) error {
+	var deployment appsv1.Deployment
+	if err := k8syaml.UnmarshalStrict(yamlData, &deployment); err != nil {
+		return fmt.Errorf("invalid Deployment: %s", cleanValidationError(err))
 	}
 
 	return nil
 }
+
+// validateServiceWithNativeTypes validates a Service using the complete corev1.Service type
+func validateServiceWithNativeTypes(yamlData []byte) error {
+	var service corev1.Service
+	if err := k8syaml.UnmarshalStrict(yamlData, &service); err != nil {
+		return fmt.Errorf("invalid Service: %s", cleanValidationError(err))
+	}
+
+	return nil
+}
+
+// validateConfigMapWithNativeTypes validates a ConfigMap using the complete corev1.ConfigMap type
+func validateConfigMapWithNativeTypes(yamlData []byte) error {
+	var configMap corev1.ConfigMap
+	if err := k8syaml.UnmarshalStrict(yamlData, &configMap); err != nil {
+		return fmt.Errorf("invalid ConfigMap: %s", cleanValidationError(err))
+	}
+
+	return nil
+}
+
+// validateSecretWithNativeTypes validates a Secret using the complete corev1.Secret type
+func validateSecretWithNativeTypes(yamlData []byte) error {
+	var secret corev1.Secret
+	if err := k8syaml.UnmarshalStrict(yamlData, &secret); err != nil {
+		return fmt.Errorf("invalid Secret: %s", cleanValidationError(err))
+	}
+
+	return nil
+}
+
+// validatePodWithNativeTypes validates a Pod using the complete corev1.Pod type
+func validatePodWithNativeTypes(yamlData []byte) error {
+	var pod corev1.Pod
+	if err := k8syaml.UnmarshalStrict(yamlData, &pod); err != nil {
+		return fmt.Errorf("invalid Pod: %s", cleanValidationError(err))
+	}
+
+	return nil
+}
+
+
+
+// validateBasicStructureFromYAML validates basic structure for unknown resource types
+func validateBasicStructureFromYAML(yamlData []byte) error {
+	var manifest map[string]interface{}
+	if err := yaml.Unmarshal(yamlData, &manifest); err != nil {
+		return fmt.Errorf("invalid YAML structure: %w", err)
+	}
+
+	return validateBasicStructure(manifest)
+}
+
+
 
 // validateBasicStructure validates basic Kubernetes resource structure
 func validateBasicStructure(manifest map[string]interface{}) error {
