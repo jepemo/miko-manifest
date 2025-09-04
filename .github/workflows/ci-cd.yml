@@ -35,8 +35,9 @@ jobs:
           miko-shell version
           miko-shell run help
 
-      - name: Build container image
+      - name: Build development container
         run: |
+          # This builds the development environment container for running tests
           miko-shell image build
 
       - name: Run tests
@@ -71,12 +72,14 @@ jobs:
           curl -sSL https://raw.githubusercontent.com/jepemo/miko-shell/main/install.sh | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Build container image
+      - name: Build development container
         run: |
+          # This builds the development environment container for running tests/lint
           miko-shell image build
 
       - name: Run linting
         run: |
+          export GOFLAGS="-buildvcs=false"
           miko-shell run lint
 
   build:
@@ -95,12 +98,14 @@ jobs:
           curl -sSL https://raw.githubusercontent.com/jepemo/miko-shell/main/install.sh | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Build container image
+      - name: Build development container
         run: |
+          # This builds the development environment container for running builds
           miko-shell image build
 
       - name: Build binary
         run: |
+          export GOFLAGS="-buildvcs=false"
           miko-shell run build
 
       - name: Verify binary
@@ -180,13 +185,15 @@ jobs:
           curl -sSL https://raw.githubusercontent.com/jepemo/miko-shell/main/install.sh | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Build container image
+      - name: Build development container
         run: |
+          # This builds the development environment container for building releases
           miko-shell image build
 
       - name: Build release binaries
         run: |
-          # Build for different architectures
+          # Build for different architectures with VCS disabled
+          export GOFLAGS="-buildvcs=false"
           GOOS=linux GOARCH=amd64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-linux-amd64 .
           GOOS=linux GOARCH=arm64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-linux-arm64 .
           GOOS=darwin GOARCH=amd64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-darwin-amd64 .
