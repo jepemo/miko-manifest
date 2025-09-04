@@ -11,9 +11,8 @@ container:
 shell:
   startup:
     - echo "🚀 Welcome to miko-manifest development environment"
-    - echo "📦 Project: $(basename $PWD)"
-    - echo "🐹 Go version: $(go version)"
-    - echo "💡 Available scripts: test, build, lint, coverage, precommit, clean, help"
+    - 'echo "📦 Project: $(basename $PWD)"'
+    - 'echo "🐹 Go version: $(go version)"'
   
   scripts:
     - name: test
@@ -26,212 +25,72 @@ shell:
       commands:
         - go test -v -coverprofile=coverage.out ./...
         - go tool cover -html=coverage.out -o coverage.html
-        - echo "📊 Coverage report generated: coverage.html"
+        - 'echo "📊 Coverage report generated: coverage.html"'
 
     - name: test-race
       description: Run tests with race detector
       commands:
         - go test -v -race ./...
 
-    - name: test-verbose
-      description: Run tests with verbose output
-      commands:
-        - go test -v -count=1 ./...
-
     - name: test-lib
       description: Run library tests only
       commands:
         - go test -v ./pkg/mikomanifest/...
 
-    - name: test-cmd
-      description: Run command tests only
-      commands:
-        - go test -v ./cmd/...
-
-    - name: test-bench
-      description: Run benchmarks
-      commands:
-        - go test -v -bench=. ./...
-
-    - name: test-short
-      description: Run short tests only
-      commands:
-        - go test -v -short ./...
-
     - name: build
-      description: Build the binary for host architecture
+      description: Build the binary
       commands:
-        - |
-          VERSION=${1:-dev}
-          BUILD_TIME=$(date +%Y-%m-%d_%H:%M:%S)
-          GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-          LDFLAGS="-ldflags=-X github.com/jepemo/miko-manifest/cmd.version=${VERSION} -X github.com/jepemo/miko-manifest/cmd.commit=${GIT_COMMIT} -X github.com/jepemo/miko-manifest/cmd.date=${BUILD_TIME}"
-          echo "🔨 Building miko-manifest version: ${VERSION}"
-          echo "📅 Build time: ${BUILD_TIME}"
-          echo "🔗 Git commit: ${GIT_COMMIT}"
-          GOOS=${MIKO_HOST_OS:-linux} GOARCH=${MIKO_HOST_ARCH:-amd64} go build ${LDFLAGS} -o miko-manifest .
-          echo "✅ Build completed: miko-manifest"
-
-    - name: build-dev
-      description: Build development version
-      commands:
-        - miko-shell run build dev
+        - 'go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=dev" -o miko-manifest .'
+        - 'echo "✅ Build completed: miko-manifest"'
 
     - name: clean
       description: Clean build artifacts
       commands:
         - go clean
         - rm -f miko-manifest
-        - echo "🧹 Cleaned build artifacts"
-
-    - name: clean-all
-      description: Clean all artifacts and directories
-      commands:
-        - go clean
-        - rm -f miko-manifest
-        - rm -rf config templates output
-        - echo "🧹 Cleaned: binary, config/, templates/, and output/ directories"
+        - 'echo "🧹 Cleaned build artifacts"'
 
     - name: deps
       description: Download and tidy dependencies
       commands:
         - go mod tidy
         - go mod download
-        - echo "📦 Dependencies updated"
+        - 'echo "📦 Dependencies updated"'
 
     - name: fmt
       description: Format code
       commands:
         - go fmt ./...
-        - echo "📝 Code formatted"
+        - 'echo "📝 Code formatted"'
 
     - name: lint
       description: Run linter
       commands:
         - golangci-lint run
-        - echo "✅ Linting completed"
-
-    - name: staticcheck
-      description: Run staticcheck
-      commands:
-        - staticcheck ./...
-        - echo "✅ Staticcheck completed"
-
-    - name: vet
-      description: Run go vet
-      commands:
-        - go vet ./...
-        - echo "✅ Go vet completed"
+        - 'echo "✅ Linting completed"'
 
     - name: precommit
       description: Run all pre-commit checks
       commands:
-        - echo "🔍 Running pre-commit checks..."
-        - echo "1. Running go vet..."
+        - 'echo "🔍 Running pre-commit checks..."'
         - go vet ./...
-        - echo "2. Running go fmt..."
         - go fmt ./...
-        - echo "3. Applying gofmt -w (write changes)..."
         - gofmt -w .
-        - echo "4. Running staticcheck..."
         - staticcheck ./...
-        - echo "5. Running tests with coverage..."
         - go test -cover ./...
-        - echo "✅ All pre-commit checks passed!"
-
-    - name: ci-test
-      description: Run CI tests with race detector and coverage
-      commands:
-        - go test -v -race -coverprofile=coverage.out ./...
-
-    - name: ci-build
-      description: Build for CI (Linux, static)
-      commands:
-        - |
-          VERSION=${1:-dev}
-          BUILD_TIME=$(date +%Y-%m-%d_%H:%M:%S)
-          GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-          LDFLAGS="-ldflags=-X github.com/jepemo/miko-manifest/cmd.version=${VERSION} -X github.com/jepemo/miko-manifest/cmd.commit=${GIT_COMMIT} -X github.com/jepemo/miko-manifest/cmd.date=${BUILD_TIME}"
-          echo "🔨 Building for CI (Linux, static)"
-          CGO_ENABLED=0 GOOS=linux go build ${LDFLAGS} -a -installsuffix cgo -o miko-manifest .
-          echo "✅ CI build completed"
-
-    - name: dev-setup
-      description: Set up development environment
-      commands:
-        - go mod tidy
-        - go fmt ./...
-        - go test -v ./...
-        - echo "🚀 Development environment ready!"
-
-    - name: example-init
-      description: Initialize example project
-      commands:
-        - ./miko-manifest init
-
-    - name: example-build
-      description: Build example with dev config
-      commands:
-        - ./miko-manifest build --env dev --output-dir example-output
-
-    - name: example-check
-      description: Check example configuration
-      commands:
-        - ./miko-manifest check --config-dir config
-
-    - name: example-lint
-      description: Lint example output
-      commands:
-        - ./miko-manifest lint --dir example-output
+        - 'echo "✅ All pre-commit checks passed!"'
 
     - name: help
-      description: Show available scripts and their descriptions
+      description: Show available scripts
       commands:
-        - echo "📋 Available miko-shell scripts for miko-manifest:"
-        - echo ""
-        - echo "🧪 Testing:"
-        - echo "  test         - Run all tests"
-        - echo "  test-coverage - Run tests with coverage report"
-        - echo "  test-race    - Run tests with race detector"
-        - echo "  test-verbose - Run tests with verbose output"
-        - echo "  test-lib     - Run library tests only"
-        - echo "  test-cmd     - Run command tests only"
-        - echo "  test-bench   - Run benchmarks"
-        - echo "  test-short   - Run short tests only"
-        - echo ""
-        - echo "🔨 Building:"
-        - echo "  build        - Build the binary for host architecture"
-        - echo "  build-dev    - Build development version"
-        - echo "  ci-build     - Build for CI (Linux, static)"
-        - echo ""
-        - echo "🧹 Cleaning:"
-        - echo "  clean        - Clean build artifacts"
-        - echo "  clean-all    - Clean all artifacts and directories"
-        - echo ""
-        - echo "📦 Dependencies:"
-        - echo "  deps         - Download and tidy dependencies"
-        - echo ""
-        - echo "✨ Code Quality:"
-        - echo "  fmt          - Format code"
-        - echo "  lint         - Run linter"
-        - echo "  staticcheck  - Run staticcheck"
-        - echo "  vet          - Run go vet"
-        - echo "  precommit    - Run all pre-commit checks"
-        - echo ""
-        - echo "🚀 Development:"
-        - echo "  dev-setup    - Set up development environment"
-        - echo ""
-        - echo "🔧 CI/CD:"
-        - echo "  ci-test      - Run CI tests"
-        - echo "  ci-build     - Build for CI"
-        - echo ""
-        - echo "📋 Examples:"
-        - echo "  example-init  - Initialize example project"
-        - echo "  example-build - Build example with dev config"
-        - echo "  example-check - Check example configuration"
-        - echo "  example-lint  - Lint example output"
-        - echo ""
-        - echo "💡 Usage:"
-        - echo "  miko-shell run <script-name> [args]"
-        - echo "  miko-shell run -- <any-command>"
-        - echo "  miko-shell open  # for interactive shell"
+        - 'echo "📋 Available miko-shell scripts:"'
+        - 'echo "  test         - Run all tests"'
+        - 'echo "  test-coverage - Run tests with coverage"'
+        - 'echo "  test-race    - Run tests with race detector"'
+        - 'echo "  test-lib     - Run library tests only"'
+        - 'echo "  build        - Build the binary"'
+        - 'echo "  clean        - Clean build artifacts"'
+        - 'echo "  deps         - Download dependencies"'
+        - 'echo "  fmt          - Format code"'
+        - 'echo "  lint         - Run linter"'
+        - 'echo "  precommit    - Run pre-commit checks"'
