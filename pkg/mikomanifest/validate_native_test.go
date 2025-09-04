@@ -9,9 +9,9 @@ import (
 func TestValidateWithKubernetesTypes(t *testing.T) {
 	// Test the new validation system with native Kubernetes types
 	testCases := []struct {
-		name        string
-		manifest    string
-		shouldFail  bool
+		name          string
+		manifest      string
+		shouldFail    bool
 		expectedError string
 	}{
 		{
@@ -58,7 +58,7 @@ spec:
         image: nginx:1.20
         ports:
         - containerPort: 80`,
-			shouldFail: true,
+			shouldFail:    true,
 			expectedError: "repicas",
 		},
 		{
@@ -87,7 +87,7 @@ spec:
   ports:
   - port: 80
     targetPort: 8080`,
-			shouldFail: true,
+			shouldFail:    true,
 			expectedError: "selctor",
 		},
 		{
@@ -108,7 +108,7 @@ metadata:
   name: test-config
 dta:
   key: value`,
-			shouldFail: true,
+			shouldFail:    true,
 			expectedError: "dta",
 		},
 	}
@@ -118,7 +118,7 @@ dta:
 			// Create temporary directory and file
 			tempDir := t.TempDir()
 			manifestFile := filepath.Join(tempDir, "test.yaml")
-			
+
 			err := os.WriteFile(manifestFile, []byte(tc.manifest), 0644)
 			if err != nil {
 				t.Fatalf("Failed to write test file: %v", err)
@@ -126,7 +126,7 @@ dta:
 
 			// Run validation
 			success := validateKubernetesManifests(tempDir, nil)
-			
+
 			if tc.shouldFail && success {
 				t.Errorf("Expected validation to fail for %s, but it passed", tc.name)
 			} else if !tc.shouldFail && !success {
@@ -139,7 +139,7 @@ dta:
 func TestStrictFieldValidation(t *testing.T) {
 	// Test that the new validation catches unknown fields
 	tempDir := t.TempDir()
-	
+
 	// Create a deployment with multiple field errors
 	invalidManifest := `apiVersion: apps/v1
 kind: Deployment
@@ -160,7 +160,7 @@ spec:
         imagen: nginx  # Should be "image"
         ports:
         - contPort: 80  # Should be "containerPort"`
-        
+
 	manifestFile := filepath.Join(tempDir, "invalid.yaml")
 	err := os.WriteFile(manifestFile, []byte(invalidManifest), 0644)
 	if err != nil {
@@ -177,14 +177,14 @@ spec:
 func TestValidationErrorMessages(t *testing.T) {
 	// Test that error messages are helpful and specific
 	tempDir := t.TempDir()
-	
+
 	invalidDeployment := `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: test-app
 spec:
   repicas: 3`
-        
+
 	manifestFile := filepath.Join(tempDir, "test.yaml")
 	err := os.WriteFile(manifestFile, []byte(invalidDeployment), 0644)
 	if err != nil {
@@ -196,7 +196,7 @@ spec:
 	if success {
 		t.Error("Expected validation to fail for deployment with 'repicas' field")
 	}
-	
-	// Note: In a more complete implementation, we would capture 
+
+	// Note: In a more complete implementation, we would capture
 	// and analyze the specific error messages here
 }

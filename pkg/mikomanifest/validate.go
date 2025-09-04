@@ -19,7 +19,7 @@ import (
 // cleanValidationError extracts the useful part from verbose JSON unmarshaling errors
 func cleanValidationError(err error) string {
 	errMsg := err.Error()
-	
+
 	// Extract just the unknown field from verbose JSON unmarshaling errors
 	// From: "error unmarshaling JSON: while decoding JSON: json: unknown field 'repicas'"
 	// To: "unknown field 'repicas'"
@@ -29,7 +29,7 @@ func cleanValidationError(err error) string {
 			return strings.TrimSpace(errMsg[idx+5:]) // Skip "json: " and trim spaces
 		}
 	}
-	
+
 	// Extract other common validation errors more cleanly
 	if strings.Contains(errMsg, "cannot unmarshal") {
 		// From: "json: cannot unmarshal string into Go struct field DeploymentSpec.spec.replicas of type int32"
@@ -44,7 +44,7 @@ func cleanValidationError(err error) string {
 					if dotIdx := strings.LastIndex(fieldName, "."); dotIdx != -1 {
 						fieldName = fieldName[dotIdx+1:]
 					}
-					
+
 					// Determine expected type
 					if strings.Contains(errMsg, "of type int") {
 						return fmt.Sprintf("invalid type for field '%s' (expected number, got text)", fieldName)
@@ -55,7 +55,7 @@ func cleanValidationError(err error) string {
 			}
 		}
 	}
-	
+
 	// For other errors, return as-is but try to make them cleaner
 	return strings.TrimSpace(errMsg)
 }
@@ -824,8 +824,6 @@ func validatePodWithNativeTypes(yamlData []byte) error {
 	return nil
 }
 
-
-
 // validateBasicStructureFromYAML validates basic structure for unknown resource types
 func validateBasicStructureFromYAML(yamlData []byte) error {
 	var manifest map[string]interface{}
@@ -835,8 +833,6 @@ func validateBasicStructureFromYAML(yamlData []byte) error {
 
 	return validateBasicStructure(manifest)
 }
-
-
 
 // validateBasicStructure validates basic Kubernetes resource structure
 func validateBasicStructure(manifest map[string]interface{}) error {

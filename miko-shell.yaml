@@ -13,7 +13,7 @@ shell:
     - echo "🚀 Welcome to miko-manifest development environment"
     - 'echo "📦 Project: $(basename $PWD)"'
     - 'echo "🐹 Go version: $(go version)"'
-  
+
   scripts:
     - name: test
       description: Run all tests

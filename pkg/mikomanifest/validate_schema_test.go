@@ -89,7 +89,7 @@ spec:
 		if err != nil {
 			t.Fatalf("Failed to write valid test file: %v", err)
 		}
-		
+
 		success := validateKubernetesManifests(validTempDir, nil)
 		if !success {
 			t.Error("Expected valid deployment to pass validation")
@@ -101,10 +101,10 @@ func TestValidateKubernetesResourceFieldValidation(t *testing.T) {
 	// Test various field validation scenarios that should fail but currently don't
 
 	testCases := []struct {
-		name     string
-		manifest string
+		name       string
+		manifest   string
 		shouldFail bool
-		reason   string
+		reason     string
 	}{
 		{
 			name: "DeploymentWithInvalidReplicasField",
@@ -126,7 +126,7 @@ spec:
       - name: test
         image: nginx`,
 			shouldFail: true,
-			reason: "Invalid field name 'repicas' instead of 'replicas'",
+			reason:     "Invalid field name 'repicas' instead of 'replicas'",
 		},
 		{
 			name: "ServiceWithInvalidSelectorField",
@@ -140,7 +140,7 @@ spec:
   ports:
   - port: 80`,
 			shouldFail: true,
-			reason: "Invalid field name 'selctor' instead of 'selector'",
+			reason:     "Invalid field name 'selctor' instead of 'selector'",
 		},
 		{
 			name: "ConfigMapWithInvalidDataField",
@@ -151,7 +151,7 @@ metadata:
 dta:  # Should be "data"
   key: value`,
 			shouldFail: true,
-			reason: "Invalid field name 'dta' instead of 'data'",
+			reason:     "Invalid field name 'dta' instead of 'data'",
 		},
 	}
 
@@ -160,7 +160,7 @@ dta:  # Should be "data"
 			// Create temp directory and file for this test case
 			tempDir := t.TempDir()
 			manifestFile := filepath.Join(tempDir, "test.yaml")
-			
+
 			err := os.WriteFile(manifestFile, []byte(tc.manifest), 0644)
 			if err != nil {
 				t.Fatalf("Failed to write test file: %v", err)
@@ -168,7 +168,7 @@ dta:  # Should be "data"
 
 			// Current validation - this demonstrates the limitation
 			success := validateKubernetesManifests(tempDir, nil)
-			
+
 			if tc.shouldFail && success {
 				t.Errorf("Expected validation to fail for %s, but it passed. Reason: %s", tc.name, tc.reason)
 			} else if !tc.shouldFail && !success {

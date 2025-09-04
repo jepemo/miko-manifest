@@ -3,10 +3,10 @@ name: Miko-Shell CI
 on:
   push:
     branches: [main, develop]
-    paths: ['miko-shell.yaml', '.github/workflows/miko-shell-ci.yml']
+    paths: ["miko-shell.yaml", ".github/workflows/miko-shell-ci.yml"]
   pull_request:
     branches: [main, develop]
-    paths: ['miko-shell.yaml', '.github/workflows/miko-shell-ci.yml']
+    paths: ["miko-shell.yaml", ".github/workflows/miko-shell-ci.yml"]
 
 env:
   MIKO_SHELL_VERSION: latest

@@ -243,6 +243,7 @@ miko-shell open              # Open shell in development environment
 ```
 
 **Benefits of miko-shell:**
+
 - ✅ Reproducible environment (same Go version, tools across all machines)
 - ✅ No local dependencies (only Docker/Podman required)
 - ✅ Cross-platform compatibility
