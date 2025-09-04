@@ -24,8 +24,21 @@ jobs:
         with:
           go-version: "1.24.x"
 
+      - name: Install miko-shell (optional alternative)
+        if: false  # Disabled by default, enable when ready to migrate
+        run: |
+          curl -sSL https://raw.githubusercontent.com/jepemo/miko-shell/main/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Run tests
         run: make test
+
+      # Alternative: Run tests with miko-shell (disabled for now)
+      # - name: Run tests (miko-shell)
+      #   if: false  # Enable when ready to migrate
+      #   run: |
+      #     miko-shell image build
+      #     miko-shell run ci-test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -41,7 +54,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: '~> v2'
+          version: "~> v2"
           args: release --clean --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

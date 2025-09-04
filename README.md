@@ -201,11 +201,60 @@ docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifes
 
 Typical pipeline: check -> build -> validate. Minimal GitHub Actions and GitLab CI templates are provided in the documentation.
 
-### 10. Contributing
+### 10. Development
+
+#### Traditional Development (Makefile)
+
+```bash
+# Build and test
+make test
+make build
+make lint
+
+# Development workflow
+make precommit    # Run all checks before committing
+```
+
+#### Modern Development (Miko-Shell) 🚀
+
+For a reproducible, containerized development experience:
+
+```bash
+# Install miko-shell
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-shell/main/install.sh | bash
+
+# Build development environment (auto-detects host architecture)
+miko-shell image build
+
+# Run tests
+miko-shell run test
+miko-shell run test-coverage
+
+# Build binary
+miko-shell run build          # Build for host architecture
+miko-shell run build v1.2.3   # Build with specific version
+
+# Code quality
+miko-shell run lint
+miko-shell run precommit      # All pre-commit checks
+
+# Interactive development
+miko-shell open              # Open shell in development environment
+```
+
+**Benefits of miko-shell:**
+- ✅ Reproducible environment (same Go version, tools across all machines)
+- ✅ No local dependencies (only Docker/Podman required)
+- ✅ Cross-platform compatibility
+- ✅ Automatic host architecture detection (`MIKO_HOST_OS`, `MIKO_HOST_ARCH`)
+
+See [MIKO_SHELL.md](MIKO_SHELL.md) for detailed documentation.
+
+### 11. Contributing
 
 Contributions are welcome. Please open an issue to propose significant changes before submitting a pull request. Ensure tests cover new behaviour and run `go test ./...` locally.
 
-### 11. License
+### 12. License
 
 MIT — see [LICENSE](LICENSE).
 
