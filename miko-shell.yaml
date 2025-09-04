@@ -53,7 +53,7 @@ shell:
     - name: build
       description: Build the binary
       commands:
-        - 'go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=dev" -o miko-manifest .'
+        - 'GOOS=$MIKO_HOST_OS GOARCH=$MIKO_HOST_ARCH go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=dev" -o miko-manifest .'
         - 'echo "✅ Build completed: miko-manifest"'
 
     - name: clean

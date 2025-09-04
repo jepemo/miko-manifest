@@ -788,18 +788,18 @@ miko-shell run help
 
 #### 11.1.2 Available Development Commands
 
-| Command | Purpose | Example |
-|---------|---------|---------|
-| `test` | Run all tests | `miko-shell run test` |
+| Command         | Purpose                        | Example                        |
+| --------------- | ------------------------------ | ------------------------------ |
+| `test`          | Run all tests                  | `miko-shell run test`          |
 | `test-coverage` | Run tests with coverage report | `miko-shell run test-coverage` |
-| `test-race` | Run tests with race detector | `miko-shell run test-race` |
-| `test-lib` | Run library tests only | `miko-shell run test-lib` |
-| `build` | Build the binary | `miko-shell run build` |
-| `clean` | Clean build artifacts | `miko-shell run clean` |
-| `deps` | Download and tidy dependencies | `miko-shell run deps` |
-| `fmt` | Format code | `miko-shell run fmt` |
-| `lint` | Run linter (golangci-lint) | `miko-shell run lint` |
-| `precommit` | Run all pre-commit checks | `miko-shell run precommit` |
+| `test-race`     | Run tests with race detector   | `miko-shell run test-race`     |
+| `test-lib`      | Run library tests only         | `miko-shell run test-lib`      |
+| `build`         | Build the binary               | `miko-shell run build`         |
+| `clean`         | Clean build artifacts          | `miko-shell run clean`         |
+| `deps`          | Download and tidy dependencies | `miko-shell run deps`          |
+| `fmt`           | Format code                    | `miko-shell run fmt`           |
+| `lint`          | Run linter (golangci-lint)     | `miko-shell run lint`          |
+| `precommit`     | Run all pre-commit checks      | `miko-shell run precommit`     |
 
 #### 11.1.3 Development Workflow
 
@@ -854,12 +854,12 @@ func main() {
         TemplatesDir: "templates",
         Variables:    map[string]string{"app_name": "my-app"},
     }
-    
+
     mm := mikomanifest.New(opts)
     if err := mm.Build(); err != nil {
         log.Fatalf("Build failed: %v", err)
     }
-    
+
     log.Println("Manifests generated successfully")
 }
 ```
