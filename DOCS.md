@@ -766,7 +766,203 @@ miko-manifest validate --dir output --env dev
 
 ---
 
-## 11. FAQ
+## 11. Development
+
+### 11.1 Development Environment with Miko-Shell
+
+For contributors and advanced users, `miko-manifest` provides a modern, containerized development environment using [`miko-shell`](https://github.com/jepemo/miko-shell).
+
+#### 11.1.1 Installation and Setup
+
+```bash
+# Install miko-shell
+curl -sSL https://raw.githubusercontent.com/jepemo/miko-shell/main/install.sh | bash
+
+# Build development environment (auto-detects host architecture)
+miko-shell image build
+
+# Verify installation
+miko-shell version
+miko-shell run help
+```
+
+#### 11.1.2 Available Development Commands
+
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `test` | Run all tests | `miko-shell run test` |
+| `test-coverage` | Run tests with coverage report | `miko-shell run test-coverage` |
+| `test-race` | Run tests with race detector | `miko-shell run test-race` |
+| `test-lib` | Run library tests only | `miko-shell run test-lib` |
+| `build` | Build the binary | `miko-shell run build` |
+| `clean` | Clean build artifacts | `miko-shell run clean` |
+| `deps` | Download and tidy dependencies | `miko-shell run deps` |
+| `fmt` | Format code | `miko-shell run fmt` |
+| `lint` | Run linter (golangci-lint) | `miko-shell run lint` |
+| `precommit` | Run all pre-commit checks | `miko-shell run precommit` |
+
+#### 11.1.3 Development Workflow
+
+```bash
+# Start development
+miko-shell open              # Interactive shell in development environment
+
+# Or run individual commands
+miko-shell run test          # Run tests
+miko-shell run lint          # Check code quality
+miko-shell run build         # Build binary
+miko-shell run precommit     # Full pre-commit validation
+```
+
+#### 11.1.4 Benefits
+
+- ✅ **Reproducible environment**: Same Go version and tools across all machines
+- ✅ **No local dependencies**: Only Docker/Podman required
+- ✅ **Cross-platform compatibility**: Works identically on Linux, macOS, Windows
+- ✅ **Automatic host architecture detection**: Uses `MIKO_HOST_OS` and `MIKO_HOST_ARCH` variables
+- ✅ **Isolated dependencies**: No conflicts with local Go installations
+
+#### 11.1.5 Configuration
+
+Development environment is configured in [`miko-shell.yaml`](miko-shell.yaml) using:
+
+- **Base image**: `golang:1.24-alpine`
+- **Additional tools**: `make`, `git`, `curl`, `bash`, `golangci-lint`, `staticcheck`
+- **Automatic setup**: Dependencies installed on first container build
+
+---
+
+## 12. Programmatic Use
+
+For Go applications that need to integrate manifest generation, `miko-manifest` provides a comprehensive library interface.
+
+### 12.1 Basic Usage
+
+```go
+package main
+
+import (
+    "log"
+    "github.com/jepemo/miko-manifest/pkg/mikomanifest"
+)
+
+func main() {
+    opts := mikomanifest.BuildOptions{
+        Environment:  "dev",
+        OutputDir:    "output",
+        ConfigDir:    "config",
+        TemplatesDir: "templates",
+        Variables:    map[string]string{"app_name": "my-app"},
+    }
+    
+    mm := mikomanifest.New(opts)
+    if err := mm.Build(); err != nil {
+        log.Fatalf("Build failed: %v", err)
+    }
+    
+    log.Println("Manifests generated successfully")
+}
+```
+
+### 12.2 Advanced Configuration
+
+```go
+opts := mikomanifest.BuildOptions{
+    Environment:   "production",
+    OutputDir:     "dist/manifests",
+    ConfigDir:     "environments",
+    TemplatesDir:  "k8s-templates",
+    Variables: map[string]string{
+        "replicas":     "3",
+        "image_tag":    "v1.2.3",
+        "namespace":    "production",
+    },
+    Validate:      true,  // Run validation after build
+    Verbose:       true,  // Enable verbose output
+}
+```
+
+### 12.3 Validation Integration
+
+```go
+// Build with validation
+mm := mikomanifest.New(opts)
+if err := mm.Build(); err != nil {
+    return fmt.Errorf("build failed: %w", err)
+}
+
+// Separate validation
+validator := mikomanifest.NewValidator(mikomanifest.ValidateOptions{
+    Dir:                   "output",
+    Environment:           "dev",
+    SkipSchemaValidation: false,
+    Verbose:              true,
+})
+
+if err := validator.Validate(); err != nil {
+    return fmt.Errorf("validation failed: %w", err)
+}
+```
+
+### 12.4 Configuration Inspection
+
+```go
+// Inspect configuration before building
+config, err := mikomanifest.LoadConfig(mikomanifest.ConfigOptions{
+    Environment: "dev",
+    ConfigDir:   "config",
+})
+if err != nil {
+    return fmt.Errorf("config load failed: %w", err)
+}
+
+// Access merged variables
+fmt.Printf("App name: %s\n", config.Variables["app_name"])
+fmt.Printf("Includes: %v\n", config.Includes)
+```
+
+### 12.5 Error Handling
+
+The library provides structured error types for different failure scenarios:
+
+```go
+import "github.com/jepemo/miko-manifest/pkg/mikomanifest"
+
+if err := mm.Build(); err != nil {
+    switch e := err.(type) {
+    case *mikomanifest.ConfigError:
+        log.Printf("Configuration error: %v", e)
+    case *mikomanifest.TemplateError:
+        log.Printf("Template error in %s: %v", e.File, e)
+    case *mikomanifest.ValidationError:
+        log.Printf("Validation error: %v", e)
+    default:
+        log.Printf("Unknown error: %v", err)
+    }
+}
+```
+
+### 12.6 Custom Template Functions
+
+```go
+import "text/template"
+
+// Create custom template functions
+funcMap := template.FuncMap{
+    "upper": strings.ToUpper,
+    "hash":  func(s string) string {
+        h := sha256.Sum256([]byte(s))
+        return hex.EncodeToString(h[:8])
+    },
+}
+
+// Apply to builder (requires extending the library)
+mm := mikomanifest.NewWithFunctions(opts, funcMap)
+```
+
+---
+
+## 13. FAQ
 
 **Q: Can I reference one variable inside another?**  
 A: Currently resolution is single-pass; pre-compose in your environment file or override via CLI.
@@ -785,7 +981,7 @@ A: Not recommended, but you can omit the `validate` step or use `--skip-schema-v
 
 ---
 
-## 12. Troubleshooting Quick Table
+## 14. Troubleshooting Quick Table
 
 | Problem                          | Likely Cause             | Resolution                                            |
 | -------------------------------- | ------------------------ | ----------------------------------------------------- |
@@ -796,7 +992,7 @@ A: Not recommended, but you can omit the `validate` step or use `--skip-schema-v
 
 ---
 
-## 13. Conclusion
+## 15. Conclusion
 
 `miko-manifest` fills a pragmatic niche: **structured, validated manifest generation** using familiar primitives without imposing a packaging ecosystem. It complements tools like Helm (packaging) or Kustomize (patching) by offering a middle path—ideal for teams wanting reproducibility, environment layering, and schema assurance with minimal ceremony.
 

@@ -37,6 +37,19 @@ shell:
       commands:
         - go test -v ./pkg/mikomanifest/...
 
+    - name: test-race
+      description: Run tests with race detector
+      commands:
+        - go test -v -race ./...
+
+    - name: clean-all
+      description: Clean all artifacts and directories
+      commands:
+        - go clean
+        - rm -f miko-manifest
+        - rm -rf config templates output
+        - 'echo "🧹 Cleaned: binary, config/, templates/, and output/ directories"'
+
     - name: build
       description: Build the binary
       commands:
@@ -90,6 +103,7 @@ shell:
         - 'echo "  test-lib     - Run library tests only"'
         - 'echo "  build        - Build the binary"'
         - 'echo "  clean        - Clean build artifacts"'
+        - 'echo "  clean-all    - Clean all artifacts and directories"'
         - 'echo "  deps         - Download dependencies"'
         - 'echo "  fmt          - Format code"'
         - 'echo "  lint         - Run linter"'

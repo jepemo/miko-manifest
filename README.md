@@ -166,25 +166,7 @@ Complete flag descriptions: see [DOCS.md](DOCS.md).
 | Auto Environment    | `build` records environment; `validate` reuses it if `--env` omitted.                            |
 | Schema Sources      | Local file, directory (recursive), or remote URL (fetched once per run).                         |
 
-### 8. Programmatic Use
-
-```go
-import "github.com/jepemo/miko-manifest/pkg/mikomanifest"
-
-opts := mikomanifest.BuildOptions{
-    Environment:  "dev",
-    OutputDir:    "output",
-    ConfigDir:    "config",
-    TemplatesDir: "templates",
-    Variables:    map[string]string{"app_name": "demo"},
-}
-mm := mikomanifest.New(opts)
-if err := mm.Build(); err != nil { /* handle */ }
-```
-
-More constructors, linting, and validation helpers are listed in [DOCS.md](DOCS.md).
-
-### 9. Docker & CI
+### 8. Docker & CI
 
 Run without local toolchain:
 
@@ -201,21 +183,7 @@ docker run --rm -v "$(pwd):/workspace" -w /workspace ghcr.io/jepemo/miko-manifes
 
 Typical pipeline: check -> build -> validate. Minimal GitHub Actions and GitLab CI templates are provided in the documentation.
 
-### 10. Development
-
-#### Traditional Development (Makefile)
-
-```bash
-# Build and test
-make test
-make build
-make lint
-
-# Development workflow
-make precommit    # Run all checks before committing
-```
-
-#### Modern Development (Miko-Shell) 🚀
+### 9. Development
 
 For a reproducible, containerized development experience:
 
@@ -232,7 +200,6 @@ miko-shell run test-coverage
 
 # Build binary
 miko-shell run build          # Build for host architecture
-miko-shell run build v1.2.3   # Build with specific version
 
 # Code quality
 miko-shell run lint
@@ -249,13 +216,13 @@ miko-shell open              # Open shell in development environment
 - ✅ Cross-platform compatibility
 - ✅ Automatic host architecture detection (`MIKO_HOST_OS`, `MIKO_HOST_ARCH`)
 
-See [MIKO_SHELL.md](MIKO_SHELL.md) for detailed documentation.
+For more development details and programmatic usage, see [DOCS.md](DOCS.md).
 
-### 11. Contributing
+### 10. Contributing
 
-Contributions are welcome. Please open an issue to propose significant changes before submitting a pull request. Ensure tests cover new behaviour and run `go test ./...` locally.
+Contributions are welcome. Please open an issue to propose significant changes before submitting a pull request. Ensure tests cover new behaviour and run `miko-shell run test` locally.
 
-### 12. License
+### 11. License
 
 MIT — see [LICENSE](LICENSE).
 
