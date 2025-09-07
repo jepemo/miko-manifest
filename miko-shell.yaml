@@ -13,6 +13,8 @@ shell:
     - echo "🚀 Welcome to miko-manifest development environment"
     - 'echo "📦 Project: $(basename $PWD)"'
     - 'echo "🐹 Go version: $(go version)"'
+    - export GOFLAGS="-buildvcs=false"
+    - 'echo "🔧 GOFLAGS set to: $GOFLAGS"'
 
   scripts:
     - name: test
@@ -48,7 +50,7 @@ shell:
     - name: build
       description: Build the binary
       commands:
-        - 'GOFLAGS="-buildvcs=false" GOOS=$MIKO_HOST_OS GOARCH=$MIKO_HOST_ARCH go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=dev" -o miko-manifest .'
+        - 'GOOS=$MIKO_HOST_OS GOARCH=$MIKO_HOST_ARCH go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=dev" -o miko-manifest .'
         - 'echo "✅ Build completed: miko-manifest"'
 
     - name: clean
@@ -74,18 +76,18 @@ shell:
     - name: lint
       description: Run linter
       commands:
-        - GOFLAGS="-buildvcs=false" golangci-lint run
+        - golangci-lint run
         - 'echo "✅ Linting completed"'
 
     - name: precommit
       description: Run all pre-commit checks
       commands:
         - 'echo "🔍 Running pre-commit checks..."'
-        - GOFLAGS="-buildvcs=false" go vet ./...
+        - go vet ./...
         - go fmt ./...
         - gofmt -w .
-        - GOFLAGS="-buildvcs=false" staticcheck ./...
-        - GOFLAGS="-buildvcs=false" go test -cover ./...
+        - staticcheck ./...
+        - go test -cover ./...
         - 'echo "✅ All pre-commit checks passed!"'
 
     - name: help

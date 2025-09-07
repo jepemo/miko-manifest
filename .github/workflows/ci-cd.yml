@@ -190,12 +190,12 @@ jobs:
 
       - name: Build release binaries
         run: |
-          # Build for different architectures with VCS disabled
-          GOOS=linux GOARCH=amd64 miko-shell run -- env GOFLAGS="-buildvcs=false" go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-linux-amd64 .
-          GOOS=linux GOARCH=arm64 miko-shell run -- env GOFLAGS="-buildvcs=false" go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-linux-arm64 .
-          GOOS=darwin GOARCH=amd64 miko-shell run -- env GOFLAGS="-buildvcs=false" go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-darwin-amd64 .
-          GOOS=darwin GOARCH=arm64 miko-shell run -- env GOFLAGS="-buildvcs=false" go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-darwin-arm64 .
-          GOOS=windows GOARCH=amd64 miko-shell run -- env GOFLAGS="-buildvcs=false" go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-windows-amd64.exe .
+          # Build for different architectures (GOFLAGS handled by miko-shell startup)
+          GOOS=linux GOARCH=amd64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-linux-amd64 .
+          GOOS=linux GOARCH=arm64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-linux-arm64 .
+          GOOS=darwin GOARCH=amd64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-darwin-amd64 .
+          GOOS=darwin GOARCH=arm64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-darwin-arm64 .
+          GOOS=windows GOARCH=amd64 miko-shell run -- go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=${{ github.ref_name }}" -o miko-manifest-windows-amd64.exe .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
