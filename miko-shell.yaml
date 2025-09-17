@@ -50,6 +50,7 @@ shell:
     - name: build
       description: Build the binary
       commands:
+        - export GOFLAGS="-buildvcs=false"
         - 'GOOS=$MIKO_HOST_OS GOARCH=$MIKO_HOST_ARCH go build -ldflags="-X github.com/jepemo/miko-manifest/cmd.version=dev" -o miko-manifest .'
         - 'echo "✅ Build completed: miko-manifest"'
 
@@ -76,6 +77,7 @@ shell:
     - name: lint
       description: Run linter
       commands:
+        - export GOFLAGS="-buildvcs=false"
         - golangci-lint run
         - 'echo "✅ Linting completed"'
 
@@ -83,6 +85,7 @@ shell:
       description: Run all pre-commit checks
       commands:
         - 'echo "🔍 Running pre-commit checks..."'
+        - export GOFLAGS="-buildvcs=false"
         - go vet ./...
         - go fmt ./...
         - gofmt -w .
