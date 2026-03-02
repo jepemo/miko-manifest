@@ -5,10 +5,10 @@ go 1.25.0
 require (
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.35.0
-	k8s.io/apiextensions-apiserver v0.35.0
-	k8s.io/apimachinery v0.35.1
-	k8s.io/client-go v0.35.0
+	k8s.io/api v0.35.2
+	k8s.io/apiextensions-apiserver v0.35.2
+	k8s.io/apimachinery v0.35.2
+	k8s.io/client-go v0.35.2
 	sigs.k8s.io/yaml v1.6.0
 )
 
